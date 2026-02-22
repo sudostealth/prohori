@@ -17,6 +17,7 @@ export function TopNav() {
       router.refresh();
       toast.success('Logged out successfully');
     } catch (error) {
+      console.error(error); // Log the error to use the variable
       toast.error('Error logging out');
     }
   };
