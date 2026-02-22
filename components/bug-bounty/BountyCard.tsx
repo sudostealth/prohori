@@ -3,7 +3,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Building2, Globe, Shield } from 'lucide-react';
 
-export function BountyCard({ program }: { program: any }) {
+interface Program {
+  title: string;
+  rewardRange: string;
+  company: string;
+  description: string;
+}
+
+export function BountyCard({ program }: { program: Program }) {
   return (
     <Card className="glass-card flex flex-col h-full">
       <CardHeader>

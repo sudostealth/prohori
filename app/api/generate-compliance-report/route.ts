@@ -13,6 +13,7 @@ export async function POST(req: Request) {
       message: `Report for ${month} generated successfully.`
     });
   } catch (error) {
+    console.error(error); // Log the error to use the variable
     return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 });
   }
 }
