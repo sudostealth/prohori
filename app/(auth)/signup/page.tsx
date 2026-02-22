@@ -9,6 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'react-hot-toast';
+import { GoogleSignInButton } from '@/components/ui/google-sign-in-button';
+import { PasswordInput } from '@/components/ui/password-input';
+import { PasswordStrengthMeter, checkPasswordStrength } from '@/components/ui/password-strength-meter';
+import { motion } from 'framer-motion';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -31,21 +35,20 @@ export default function SignupPage() {
         return;
       }
 
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-      if (!passwordRegex.test(password)) {
-        toast.error('Password must be at least 8 characters, include an uppercase letter, a lowercase letter, a number, and a special character.');
+      const strength = checkPasswordStrength(password);
+      if (!Object.values(strength).every(Boolean)) {
+        toast.error('Password does not meet all requirements.');
         setLoading(false);
         return;
       }
 
-      // Step 1: Sign up the user via Supabase Auth
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            company_name: companyName, // Used in a trigger or manual insert later
+            company_name: companyName,
           }
         }
       });
@@ -64,83 +67,112 @@ export default function SignupPage() {
   };
 
   return (
-    <Card className="glass-card border-none bg-surface/50">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold font-display text-white">Create an account</CardTitle>
-        <CardDescription className="text-text-muted">
-          Enter your details below to get started with Prohori
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-text">Full Name</Label>
-            <Input 
-              id="fullName" 
-              placeholder="Rahim Khan" 
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required 
-              className="bg-surface-2 border-border text-white focus-visible:ring-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyName" className="text-text">Company Name</Label>
-            <Input 
-              id="companyName" 
-              placeholder="Rahim Store" 
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              required 
-              className="bg-surface-2 border-border text-white focus-visible:ring-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-text">Work Email</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="name@company.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required 
-              className="bg-surface-2 border-border text-white focus-visible:ring-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-text">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-              className="bg-surface-2 border-border text-white focus-visible:ring-primary"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-text">Confirm Password</Label>
-            <Input 
-              id="confirmPassword" 
-              type="password" 
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required 
-              className="bg-surface-2 border-border text-white focus-visible:ring-primary"
-            />
-          </div>
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-background font-medium" disabled={loading}>
-            {loading ? 'Creating account...' : 'Sign up'}
-          </Button>
-        </form>
-        
-        <div className="text-center mt-6 text-sm text-text-muted">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Log in
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative overflow-hidden">
+       {/* Background effect */}
+       <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[100px]" />
+       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md relative z-10"
+      >
+        <Card className="glass-card border-none bg-surface/80 shadow-2xl backdrop-blur-xl">
+          <CardHeader className="space-y-1 text-center pb-2">
+            <CardTitle className="text-3xl font-bold font-display text-white">Get Started</CardTitle>
+            <CardDescription className="text-text-muted">
+              Create your Prohori account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+             <div className="space-y-4">
+               <GoogleSignInButton />
+
+               <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-surface px-2 text-text-muted">Or continue with</span>
+                  </div>
+                </div>
+
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-text">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="Rahim Khan"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="bg-surface-2 border-border text-white focus-visible:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="companyName" className="text-text">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    placeholder="Rahim Store"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    required
+                    className="bg-surface-2 border-border text-white focus-visible:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-text">Work Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-surface-2 border-border text-white focus-visible:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-text">Password</Label>
+                  <PasswordInput
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="bg-surface-2 border-border text-white focus-visible:ring-primary"
+                  />
+                  <div className="pt-2">
+                    <PasswordStrengthMeter password={password} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="text-text">Confirm Password</Label>
+                  <PasswordInput
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="bg-surface-2 border-border text-white focus-visible:ring-primary"
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-background font-bold h-11 mt-4" disabled={loading}>
+                  {loading ? 'Creating account...' : 'Create Account'}
+                </Button>
+              </form>
+             </div>
+
+            <div className="text-center mt-6 text-sm text-text-muted">
+              Already have an account?{' '}
+              <Link href="/login" className="font-medium text-primary hover:underline">
+                Log in
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
 }
