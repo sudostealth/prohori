@@ -1,0 +1,33 @@
+
+> tmp_app@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ✓ Compiled /middleware in 227ms (72 modules)
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 7.5s (1654 modules)
+ ✓ Compiled in 916ms (816 modules)
+ GET /dashboard 200 in 8457ms
+ GET /dashboard 200 in 98ms
+ ○ Compiling /ai-analyst ...
+ ✓ Compiled /ai-analyst in 9.8s (3922 modules)
+ GET /ai-analyst 200 in 11687ms
+ ○ Compiling /compliance ...
+ ✓ Compiled /compliance in 1612ms (3866 modules)
+ GET /compliance 200 in 1865ms
+ ○ Compiling /bug-bounty ...
+ ✓ Compiled /bug-bounty in 1020ms (3909 modules)
+ GET /bug-bounty 200 in 1179ms
+ ○ Compiling /hrm ...
+ ✓ Compiled /hrm in 819ms (3936 modules)
+ GET /hrm 200 in 994ms
+ ○ Compiling /billing ...
+ ✓ Compiled /billing in 759ms (3954 modules)
+ GET /billing 200 in 891ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (133kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled in 7s (4542 modules)
+[?25h
