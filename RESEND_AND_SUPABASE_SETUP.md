@@ -18,7 +18,16 @@ Ensure your Vercel (or local `.env.local`) environment variables are set correct
 
 > **Note:** `NEXT_PUBLIC_COOKIE_DOMAIN` must start with a dot (e.g., `.prohori.app`) to share sessions between `prohori.app` and `hq.prohori.app`.
 
-## 2. Supabase SMTP Configuration (Resend)
+## 2. **CRITICAL: Cleanup Old Triggers**
+
+If you previously set up the "Edge Function Email" method, you MUST run this cleanup script to prevent "500 Internal Server Error" during signup.
+
+1.  Open your [Supabase SQL Editor](https://supabase.com/dashboard/project/_/sql).
+2.  Paste and Run the contents of `supabase/migrations/999_cleanup_email_triggers.sql`.
+    *   This removes any old webhooks or triggers that might be trying to call the deleted Edge Function.
+    *   It also ensures the `handle_new_user` function (for creating profiles) is robust and won't crash signup if it fails.
+
+## 3. Supabase SMTP Configuration (Resend)
 
 To send all transactional emails (Signup confirmation, Reset Password, Invite) via Resend using your custom domain (`joruri.prohori.app`):
 
@@ -44,7 +53,7 @@ To send all transactional emails (Signup confirmation, Reset Password, Invite) v
 3.  **Verify Domain in Resend:**
     *   Ensure `joruri.prohori.app` is verified in Resend (DNS records: DKIM, SPF, DMARC). You mentioned this is already done.
 
-## 3. Supabase Auth URLs
+## 4. Supabase Auth URLs
 
 To ensure redirects work correctly (especially for magic links and OAuth):
 
@@ -56,7 +65,7 @@ To ensure redirects work correctly (especially for magic links and OAuth):
     *   `https://hq.prohori.app/auth/callback` (Required for admin login flow if using OAuth/Magic Link directly on HQ, though we primarily redirect from main site)
     *   `http://localhost:3000/auth/callback` (For local development)
 
-## 4. Admin Access Setup
+## 5. Admin Access Setup
 
 The Admin Portal lives at `https://hq.prohori.app`. Access is restricted to authorized emails.
 
@@ -88,13 +97,14 @@ Since there is no public "Admin Signup" page, you must create the user manually:
     *   The `public.handle_new_user()` trigger should automatically create a `profiles` entry.
     *   You can manually check the `profiles` table to ensure `role` is set to `owner` or `admin` (though access is primarily controlled by the email list env var currently).
 
-## 5. Cleanup Notes
+## 6. Cleanup Notes
 
 *   **Legacy Function Removed:** The custom Edge Function `send-auth-email` and its associated database trigger (`005_auth_hook.sql`) have been removed from the codebase. We now rely on standard Supabase SMTP for reliability.
 *   **Variable Standardization:** The project now consistently uses `NEXT_PUBLIC_ADMIN_URL_SEGMENT` for the admin path.
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 *   **Login Loops:** Check `NEXT_PUBLIC_COOKIE_DOMAIN`. It MUST be set to `.prohori.app` (with leading dot) in Vercel.
 *   **Email Not Sending:** Check Supabase Auth Logs (Project Settings -> Logs -> Auth) for SMTP errors (535 = Invalid Key, 550 = Sender Mismatch).
 *   **Admin 404:** Ensure `NEXT_PUBLIC_ADMIN_URL_SEGMENT` matches in Vercel and your code deployment.
+*   **500 Error on Signup:** **Run the cleanup SQL script!** This means Supabase is trying to call a deleted Edge Function via a webhook.
