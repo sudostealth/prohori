@@ -4,7 +4,20 @@ import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
+
+  // Configure cookie options for cross-subdomain auth
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+
+  const supabase = createMiddlewareClient({ req, res }, {
+    cookieOptions: cookieDomain ? {
+      domain: cookieDomain,
+      path: '/',
+      sameSite: 'lax',
+      secure: isProd,
+    } : undefined
+  });
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -19,7 +32,11 @@ export async function middleware(req: NextRequest) {
 
   if (isHqSubdomain) {
     if (!session) {
-       // Redirect to main site landing page
+       // Redirect to main site login instead of landing page to prompt login if needed
+       // Or landing page as requested previously.
+       // User said: "when admin login... redirect to hq.prohori.app. otherwise if anyone search without login... redirect to landing page"
+       // So redirecting to landing page is correct behavior for unauthenticated users on HQ.
+
        const mainDomain = hostname.replace("hq.", "");
        const protocol = url.protocol;
        return NextResponse.redirect(`${protocol}//${mainDomain}/`);
@@ -75,6 +92,7 @@ export async function middleware(req: NextRequest) {
       const newPath = req.nextUrl.pathname.replace(`/${adminSegment}`, "") || "/";
 
       if (!isHqSubdomain) {
+          // Only redirect if NOT already on HQ subdomain (prevent loops)
           return NextResponse.redirect(`${protocol}//${hqDomain}${newPath}`);
       }
   }
