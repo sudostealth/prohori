@@ -1,110 +1,58 @@
-# Email & Auth Setup Guide (Resend + Supabase)
+# Resend & Supabase Email Setup Guide
 
-This document outlines the steps to configure Supabase Authentication and Email services using Resend, ensuring seamless user signup, login, and admin access.
+This guide details how to configure Supabase to send transactional emails (signup confirmation, password reset, etc.) using Resend via SMTP. This is critical to fix the "AuthApiError: Error sending confirmation email" (500) error.
 
-## 1. Environment Variables
+## Prerequisite: Resend Configuration
 
-Ensure your Vercel (or local `.env.local`) environment variables are set correctly:
+1.  **Verify Domain**: Ensure `joruri.prohori.app` (or your chosen domain) is verified in the Resend Dashboard under **Domains**.
+    -   Status must be **Verified**.
+2.  **Generate API Key**: Create a new API Key in Resend with "Sending Access" (or Full Access).
+    -   Copy this key immediately (starts with `re_...`).
 
-| Variable | Description | Example |
-| :--- | :--- | :--- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase Project URL | `https://xyz.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase Anon Key | `eyJhbGci...` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase Service Role Key (Server-side only) | `eyJhbGci...` |
-| `NEXT_PUBLIC_ADMIN_URL_SEGMENT` | Secret segment for admin portal (publicly visible but obscure) | `admin-secret-portal` |
-| `ADMIN_AUTHORIZED_EMAILS` | Comma-separated list of admin emails | `admin@prohori.app, owner@prohori.app` |
-| `NEXT_PUBLIC_COOKIE_DOMAIN` | Domain for shared auth cookies (crucial for subdomains) | `.prohori.app` |
-| `RESEND_API_KEY` | Your Resend API Key (for manual sending if needed) | `re_123...` |
+## Supabase SMTP Configuration
 
-> **Note:** `NEXT_PUBLIC_COOKIE_DOMAIN` must start with a dot (e.g., `.prohori.app`) to share sessions between `prohori.app` and `hq.prohori.app`.
+Go to your Supabase Project Dashboard -> **Project Settings** -> **Auth** -> **SMTP Settings**.
 
-## 2. **CRITICAL: Cleanup Old Triggers**
+**Enable Custom SMTP**: Toggle ON.
 
-If you previously set up the "Edge Function Email" method, you MUST run this cleanup script to prevent "500 Internal Server Error" during signup.
+Fill in the following details EXACTLY:
 
-1.  Open your [Supabase SQL Editor](https://supabase.com/dashboard/project/_/sql).
-2.  Paste and Run the contents of `supabase/migrations/999_cleanup_email_triggers.sql`.
-    *   This removes any old webhooks or triggers that might be trying to call the deleted Edge Function.
-    *   It also ensures the `handle_new_user` function (for creating profiles) is robust and won't crash signup if it fails.
+*   **Sender Email**: `noreply@joruri.prohori.app`
+    *   **CRITICAL**: This MUST match the domain verified in Resend. If you verified `joruri.prohori.app`, this email must be `@joruri.prohori.app`. Using `@prohori.app` will cause a 500 error if that domain is not verified separately.
+*   **Sender Name**: `Prohori Security` (or your app name).
+*   **Host**: `smtp.resend.com`
+*   **Port**: `465`
+*   **User**: `resend`
+*   **Password**: `re_123456789...` (Paste your **Resend API Key** here. Do NOT put your Supabase key).
+    *   *Note: The placeholder might say "YOUR_API_KEY", but you must paste the actual key starting with `re_`.*
+*   **Minimum Interval**: `60` (default is fine).
 
-## 3. Supabase SMTP Configuration (Resend)
+**Click "Save"**.
 
-To send all transactional emails (Signup confirmation, Reset Password, Invite) via Resend using your custom domain (`joruri.prohori.app`):
+## Testing the Configuration
 
-1.  **Get SMTP Credentials from Resend:**
-    *   Log in to your [Resend Dashboard](https://resend.com/emails).
-    *   Go to **Settings** -> **SMTP**.
-    *   Generate a new API Key if needed.
-    *   Note the Host (`smtp.resend.com`), Port (`465` or `587`), Username (`resend`), and Password (API Key).
+1.  Go to the **Authentication** -> **Users** page in Supabase.
+2.  Delete any test users that might be stuck.
+3.  Go to your app's Signup page (`/signup`).
+4.  Sign up with a real email address.
+5.  Check your inbox. You should receive the confirmation email from `noreply@joruri.prohori.app`.
 
-2.  **Configure Supabase:**
-    *   Go to your [Supabase Project Dashboard](https://supabase.com/dashboard).
-    *   Navigate to **Project Settings** -> **Auth** -> **SMTP Settings**.
-    *   Enable **Enable Custom SMTP**.
-    *   Fill in the details:
-        *   **Sender Email:** `noreply@joruri.prohori.app` (Must match your verified domain in Resend)
-        *   **Sender Name:** `Prohori Security`
-        *   **Host:** `smtp.resend.com`
-        *   **Port:** `465` (SSL) or `587` (TLS)
-        *   **Username:** `resend`
-        *   **Password:** Your Resend API Key (`re_...`)
-    *   Click **Save**.
+## Troubleshooting "500: Error sending confirmation email"
 
-3.  **Verify Domain in Resend:**
-    *   Ensure `joruri.prohori.app` is verified in Resend (DNS records: DKIM, SPF, DMARC). You mentioned this is already done.
+If you still see the error:
+1.  **Double Check Sender Email**: Does it match the verified domain in Resend?
+2.  **Check Resend Logs**: Go to Resend Dashboard -> **Logs**. Do you see a failed attempt? The log will say *why* it failed (e.g., "Sender identity not verified").
+3.  **Check API Key**: Did you paste the correct Resend API Key in the SMTP Password field?
 
-## 4. Supabase Auth URLs
+## Admin Subdomain Login Setup
 
-To ensure redirects work correctly (especially for magic links and OAuth):
+To allow admins to log in on `www.prohori.app` and be redirected to `hq.prohori.app` while staying logged in, you must share cookies across subdomains.
 
-1.  Go to **Authentication** -> **URL Configuration**.
-2.  **Site URL:** Set to `https://prohori.app`.
-3.  **Redirect URLs:** Add the following:
-    *   `https://prohori.app/auth/callback`
-    *   `https://www.prohori.app/auth/callback`
-    *   `https://hq.prohori.app/auth/callback` (Required for admin login flow if using OAuth/Magic Link directly on HQ, though we primarily redirect from main site)
-    *   `http://localhost:3000/auth/callback` (For local development)
+1.  **Set Environment Variable**:
+    In your Vercel Project Settings (and `.env.local` for local dev), add:
+    ```
+    NEXT_PUBLIC_COOKIE_DOMAIN=.prohori.app
+    ```
+    *(Note the leading dot)*.
 
-## 5. Admin Access Setup
-
-The Admin Portal lives at `https://hq.prohori.app`. Access is restricted to authorized emails.
-
-### How Admin Login Works:
-1.  Admin visits `https://prohori.app/login` (Main Site).
-2.  Enters email (e.g., `admin@prohori.app`) and password.
-3.  System checks if email is in `ADMIN_AUTHORIZED_EMAILS`.
-4.  If yes, redirects to `https://hq.prohori.app`.
-5.  Middleware on `hq.prohori.app` detects the subdomain and verifies the session (shared via `.prohori.app` cookie).
-6.  If valid, rewrites URL to `/${NEXT_PUBLIC_ADMIN_URL_SEGMENT}/...` internally to show the dashboard.
-
-### Creating an Admin User:
-Since there is no public "Admin Signup" page, you must create the user manually:
-
-1.  **Create Auth User:**
-    *   Go to Supabase Dashboard -> **Authentication** -> **Users**.
-    *   Click **Add User** -> **Create New User**.
-    *   Enter Email: `admin@prohori.app` (or whatever you use).
-    *   Enter Password.
-    *   Toggle "Auto confirm user?" to **ON**.
-    *   Click **Create User**.
-
-2.  **Authorize the Email:**
-    *   Add the email to your `ADMIN_AUTHORIZED_EMAILS` environment variable in Vercel.
-    *   Example: `admin@prohori.app, owner@prohori.app`
-    *   Redeploy if needed.
-
-3.  **Verify Admin Profile (Optional/Automatic):**
-    *   The `public.handle_new_user()` trigger should automatically create a `profiles` entry.
-    *   You can manually check the `profiles` table to ensure `role` is set to `owner` or `admin` (though access is primarily controlled by the email list env var currently).
-
-## 6. Cleanup Notes
-
-*   **Legacy Function Removed:** The custom Edge Function `send-auth-email` and its associated database trigger (`005_auth_hook.sql`) have been removed from the codebase. We now rely on standard Supabase SMTP for reliability.
-*   **Variable Standardization:** The project now consistently uses `NEXT_PUBLIC_ADMIN_URL_SEGMENT` for the admin path.
-
-## 7. Troubleshooting
-
-*   **Login Loops:** Check `NEXT_PUBLIC_COOKIE_DOMAIN`. It MUST be set to `.prohori.app` (with leading dot) in Vercel.
-*   **Email Not Sending:** Check Supabase Auth Logs (Project Settings -> Logs -> Auth) for SMTP errors (535 = Invalid Key, 550 = Sender Mismatch).
-*   **Admin 404:** Ensure `NEXT_PUBLIC_ADMIN_URL_SEGMENT` matches in Vercel and your code deployment.
-*   **500 Error on Signup:** **Run the cleanup SQL script!** This means Supabase is trying to call a deleted Edge Function via a webhook.
+2.  **Redeploy**: Redeploy your application for this change to take effect.

@@ -14,11 +14,18 @@ export async function GET(request: Request) {
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
     try {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
+
       if (error) {
         console.error('Auth callback error exchanging code:', error);
-        // Redirect to login with error message
         return NextResponse.redirect(`${requestUrl.origin}/login?error=Could not verify email. Please try logging in again.`);
+      }
+
+      if (session?.user?.email) {
+        const authorizedEmails = (process.env.ADMIN_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());
+        if (authorizedEmails.includes(session.user.email)) {
+          return NextResponse.redirect('https://hq.prohori.app');
+        }
       }
     } catch (err) {
       console.error('Unexpected auth callback error:', err);
