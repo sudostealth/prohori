@@ -4,25 +4,62 @@ import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  const url = req.nextUrl;
+
+  // Basic Health Check / Debug route bypass
+  if (url.pathname === '/api/debug' || url.pathname === '/api/health') {
+    return res;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    console.error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
+    // If we are missing critical config, we can't proceed with auth.
+    // Return a 500 error with a clear message instead of crashing with 502 DNS error
+    return new NextResponse(
+      JSON.stringify({ error: 'Configuration Error: Missing Supabase URL' }),
+      { status: 500, headers: { 'content-type': 'application/json' } }
+    );
+  }
+
+  // Check for localhost in production environment
+  if (process.env.NODE_ENV === 'production' && supabaseUrl.includes('localhost')) {
+     console.error('Invalid Configuration: NEXT_PUBLIC_SUPABASE_URL points to localhost in production.');
+     return new NextResponse(
+        JSON.stringify({
+          error: 'Configuration Error: Application is running in production but configured with localhost URL.',
+          tip: 'Update your Vercel Environment Variables to point to your live Supabase project URL.'
+        }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+  }
 
   // Configure cookie options for cross-subdomain auth
   const isProd = process.env.NODE_ENV === 'production';
   const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
 
-  const supabase = createMiddlewareClient({ req, res }, {
-    cookieOptions: cookieDomain ? {
-      domain: cookieDomain,
-      path: '/',
-      sameSite: 'lax',
-      secure: isProd,
-    } : undefined
-  });
+  let session = null;
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  try {
+    const supabase = createMiddlewareClient({ req, res }, {
+      cookieOptions: cookieDomain ? {
+        domain: cookieDomain,
+        path: '/',
+        sameSite: 'lax',
+        secure: isProd,
+      } : undefined
+    });
 
-  const url = req.nextUrl;
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+  } catch (error) {
+    console.error('Supabase Auth Error in Middleware:', error);
+    // If auth fails (e.g. connection error), proceed as unauthenticated
+    // rather than crashing the whole request, unless it's critical.
+    // For now, we treat as no session.
+    session = null;
+  }
+
   const hostname = req.headers.get("host") || "";
   const adminSegment = process.env.ADMIN_URL_SEGMENT || "admin-secret-portal";
   const authorizedEmails = (process.env.ADMIN_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());

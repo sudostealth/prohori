@@ -1,26 +1,40 @@
-# Vercel Deployment Instructions
+# Deployment Instructions for Vercel
 
-To fix the `502: BAD_GATEWAY` and `DNS_HOSTNAME_NOT_FOUND` error, you must update your Environment Variables on Vercel.
+This application requires specific environment variables to function correctly, especially for the Admin Subdomain (`hq.prohori.app`) and Authentication features.
 
-## The Problem
-The error happens because `NEXT_PUBLIC_SUPABASE_URL` is set to `http://localhost:3000` (or similar) in your Vercel project settings.
-When your application runs on Vercel's servers (Edge Network), it cannot access "localhost" because "localhost" refers to the server itself, not your computer or your database.
+## 1. Environment Variables
 
-## The Fix
+Go to your Vercel Project Dashboard -> **Settings** -> **Environment Variables**.
 
-1. Go to your [Vercel Dashboard](https://vercel.com/dashboard).
-2. Select your project (**prohori**).
-3. Go to **Settings** > **Environment Variables**.
-4. Find `NEXT_PUBLIC_SUPABASE_URL`.
-5. Edit it and change the value to your **Real Supabase Project URL**.
-   - Example: `https://your-project-ref.supabase.co`
-   - You can find this in your Supabase Dashboard under Settings > API.
-6. Find `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-   - Ensure it is set to your real **Project API Key (anon/public)**.
-7. **Redeploy** your latest commit for the changes to take effect.
-   - You can do this by going to the **Deployments** tab, clicking the three dots on the latest deployment, and selecting **Redeploy**.
+Add the following variables. **Make sure to uncheck "Development" if the value is only for Production, or use different values for Development and Production.**
 
-## Other Variables
-Ensure these are also correct for production:
-- `NEXT_PUBLIC_COOKIE_DOMAIN`: Set to `.prohori.app` (note the leading dot) to allow login sessions to work across `prohori.app` and `hq.prohori.app`.
-- `ADMIN_AUTHORIZED_EMAILS`: Comma-separated list of admin emails.
+| Variable Name | Value Description | Example |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_SUPABASE_URL` | **CRITICAL:** The URL of your Supabase project. **MUST NOT be `localhost` in Production.** | `https://xyz.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The anonymous key for your Supabase project. | `eyJhbG...` |
+| `NEXT_PUBLIC_COOKIE_DOMAIN` | The root domain for cookie sharing. | `.prohori.app` (note the leading dot) |
+| `ADMIN_AUTHORIZED_EMAILS` | Comma-separated list of emails allowed to access the Admin Panel. | `admin@prohori.app, owner@prohori.app` |
+| `ADMIN_URL_SEGMENT` | (Optional) The secret path segment for the admin dashboard. Defaults to `admin-secret-portal`. | `admin-secret-portal` |
+
+### ⚠️ IMPORTANT: Common 502 Bad Gateway Error Fix
+
+If you see a **502 Bad Gateway** with `DNS_HOSTNAME_NOT_FOUND` on `hq.prohori.app`:
+
+1.  **Check `NEXT_PUBLIC_SUPABASE_URL`**: Ensure it is set to your **Supabase Cloud URL** (e.g., `https://your-project.supabase.co`), NOT `http://localhost:54321`.
+2.  **Check Environment Scope**: In Vercel, ensure the variable is applied to **Production** and **Preview** environments, not just Development.
+3.  **Redeploy**: After changing environment variables, you **must redeploy** your application for changes to take effect. Going to "Deployments" -> "Redeploy" is usually sufficient.
+
+## 2. Subdomain Configuration
+
+1.  In Vercel, go to **Settings** -> **Domains**.
+2.  Add `hq.prohori.app`.
+3.  Ensure it is assigned to the **same project** as `prohori.app`.
+4.  Vercel will automatically handle SSL and routing.
+
+## 3. Debugging
+
+If you are still facing issues, navigate to `https://prohori.app/api/debug` (or `https://hq.prohori.app/api/debug`).
+This endpoint will show you the current configuration status (sanitized) so you can verify if the environment variables are being read correctly.
+
+- `NEXT_PUBLIC_SUPABASE_URL_SET`: Should be `true`.
+- `NEXT_PUBLIC_SUPABASE_URL_IS_LOCALHOST`: Should be `false` in production.
