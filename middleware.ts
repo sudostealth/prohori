@@ -61,7 +61,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const hostname = req.headers.get("host") || "";
-  const adminSegment = process.env.ADMIN_URL_SEGMENT || "admin-secret-portal";
+  const adminSegment = process.env.NEXT_PUBLIC_ADMIN_URL_SEGMENT || "admin-secret-portal";
   const authorizedEmails = (process.env.ADMIN_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());
 
   // Check if we are on the HQ subdomain
