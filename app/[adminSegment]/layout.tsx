@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 
-const ADMIN_SEGMENT = process.env.ADMIN_URL_SEGMENT || 'admin-secret-portal';
+const ADMIN_SEGMENT = process.env.NEXT_PUBLIC_ADMIN_URL_SEGMENT || 'admin-secret-portal';
 const AUTHORIZED_EMAILS = (process.env.ADMIN_AUTHORIZED_EMAILS || '').split(',').map(e => e.trim());
 
 export default async function AdminLayout({
