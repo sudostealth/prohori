@@ -13,12 +13,14 @@ import { GoogleSignInButton } from '@/components/ui/google-sign-in-button';
 import { PasswordInput } from '@/components/ui/password-input';
 import { PasswordStrengthMeter } from '@/components/ui/password-strength-meter';
 import { checkIsAdmin } from '@/app/actions/auth';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -36,24 +38,30 @@ export default function LoginPage() {
         console.error('Login error:', error);
         toast.error(error.message);
       } else {
-        // Check if admin
-        const isAdmin = await checkIsAdmin(email);
+        // Show success animation
+        setIsSuccess(true);
 
-        toast.success('Logged in successfully');
+        // Wait a bit for animation, then redirect
+        setTimeout(async () => {
+           // Check if admin
+            const isAdmin = await checkIsAdmin(email);
 
-        if (isAdmin) {
-          // Redirect to admin subdomain
-          window.location.href = 'https://hq.prohori.app';
-        } else {
-          router.push('/dashboard');
-          router.refresh();
-        }
+            if (isAdmin) {
+              window.location.href = 'https://hq.prohori.app';
+            } else {
+              router.push('/dashboard');
+              router.refresh();
+            }
+        }, 1500);
       }
     } catch (err) {
       console.error('Unexpected login error:', err);
       toast.error('An unexpected error occurred. Please try again.');
-    } finally {
       setLoading(false);
+    }
+    // Do NOT set loading to false in finally if success, to prevent UI flicker
+    if (!isSuccess) {
+         setLoading(false);
     }
   };
 
@@ -72,70 +80,104 @@ export default function LoginPage() {
         className="w-full max-w-md relative z-10"
       >
         <Card className="glass-card border-none bg-surface/80 shadow-2xl backdrop-blur-xl">
-          <CardHeader className="space-y-1 text-center pb-2">
-            <CardTitle className="text-3xl font-bold font-display text-white">Welcome Back</CardTitle>
-            <CardDescription className="text-text-muted">
-              Enter your credentials to access your dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-             <div className="space-y-4">
-               <GoogleSignInButton />
+           <AnimatePresence mode="wait">
+            {isSuccess ? (
+               <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="p-10 text-center space-y-6 flex flex-col items-center justify-center h-[400px]"
+              >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  >
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                      <CheckCircle2 className="w-12 h-12 text-primary" />
+                    </div>
+                  </motion.div>
 
-               <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold text-white">Welcome Back!</h2>
+                    <p className="text-text-muted">Redirecting you to dashboard...</p>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-surface px-2 text-text-muted">Or continue with</span>
-                  </div>
-                </div>
+              </motion.div>
+            ) : (
+             <motion.div
+                key="form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <CardHeader className="space-y-1 text-center pb-2">
+                  <CardTitle className="text-3xl font-bold font-display text-white">Welcome Back</CardTitle>
+                  <CardDescription className="text-text-muted">
+                    Enter your credentials to access your dashboard
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <GoogleSignInButton />
 
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-text">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-surface-2 border-border text-white focus-visible:ring-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-text">Password</Label>
-                    <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
-                      Forgot password?
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-surface px-2 text-text-muted">Or continue with</span>
+                        </div>
+                      </div>
+
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-text">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="name@company.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="bg-surface-2 border-border text-white focus-visible:ring-primary"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="password" className="text-text">Password</Label>
+                          <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+                            Forgot password?
+                          </Link>
+                        </div>
+                        <PasswordInput
+                          id="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="bg-surface-2 border-border text-white focus-visible:ring-primary"
+                        />
+                        {/* Password Strength Meter - Requested for Login too */}
+                        <div className="pt-2">
+                          <PasswordStrengthMeter password={password} />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-background font-bold h-11 mt-4" disabled={loading}>
+                        {loading ? 'Logging in...' : 'Log in'}
+                      </Button>
+                    </form>
+                  </div>
+
+                  <div className="text-center mt-6 text-sm text-text-muted">
+                    Don&apos;t have an account?{' '}
+                    <Link href="/signup" className="font-medium text-primary hover:underline">
+                      Sign up
                     </Link>
                   </div>
-                  <PasswordInput
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="bg-surface-2 border-border text-white focus-visible:ring-primary"
-                  />
-                  {/* Password Strength Meter - Requested for Login too */}
-                  <div className="pt-2">
-                    <PasswordStrengthMeter password={password} />
-                  </div>
-                </div>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-background font-bold h-11 mt-4" disabled={loading}>
-                  {loading ? 'Logging in...' : 'Log in'}
-                </Button>
-              </form>
-            </div>
-
-            <div className="text-center mt-6 text-sm text-text-muted">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="font-medium text-primary hover:underline">
-                Sign up
-              </Link>
-            </div>
-          </CardContent>
+                </CardContent>
+              </motion.div>
+            )}
+           </AnimatePresence>
         </Card>
       </motion.div>
     </div>

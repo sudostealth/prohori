@@ -21,25 +21,38 @@ This document outlines the manual steps required to fix the signup/login issues,
     *   Select "Full Access" or "Sending Access" (ensure it can send emails).
     *   **Copy the API Key immediately.** You will need this for the next step.
 
-## 2. Supabase SMTP Configuration
+## 2. Supabase Auth Configuration (Email Settings)
 
-To ensure emails are sent reliably and from your custom domain, configure Supabase to use Resend's SMTP service.
+To send emails using Resend Templates (and bypass Supabase's default template limitation), we will use a **Database Webhook + Edge Function**.
 
-1.  **Log in to Supabase:** Go to your project dashboard.
-2.  **Navigate to Auth Settings:** Go to **Authentication** -> **Providers** -> **Email**.
-3.  **Enable Email Provider:** Ensure "Email" is enabled.
-4.  **Configure SMTP:**
-    *   Scroll down to "SMTP Settings".
-    *   Toggle "Enable Custom SMTP" to **ON**.
-    *   **Sender Email:** `noreply@joruri.prohori.app` (or `auth@joruri.prohori.app` - must match the verified domain in Resend).
-    *   **Sender Name:** `Prohori Security` (or your preferred name).
-    *   **Host:** `smtp.resend.com`
-    *   **Port:** `465`
-    *   **User:** `resend`
-    *   **Password:** Paste the **Resend API Key** you created in Step 1.
-    *   Click "Save".
+1.  **Disable Default Emails:**
+    *   Go to **Authentication** -> **Email Templates**.
+    *   Turn **OFF** the "Confirm email" template (toggle "Enable Email Confirmations" -> "Customize email" -> OFF? No, keep "Confirm email" enabled in *Providers*, but we need to stop Supabase from sending the default one).
+    *   *Correction*: Supabase doesn't easily let you "stop" sending the default email while keeping the token generation active unless you use the "SMTP" method (which you tried and got 500 errors).
+    *   **Alternative:** If you want to use the Edge Function method:
+        *   You can leave the default email enabled for now as a fallback, OR
+        *   Ideally, use the `supabase/functions/send-auth-email` edge function.
 
-## 3. Supabase Auth Configuration
+2.  **Deploy Edge Function:**
+    *   Run `supabase functions deploy send-auth-email`.
+    *   Set the Resend API Key: `supabase secrets set RESEND_API_KEY=re_12345...`
+    *   Set Supabase URL/Key: `supabase secrets set SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...`
+
+3.  **Create Database Webhook (in Dashboard):**
+    *   Go to **Database** -> **Webhooks**.
+    *   Click **Create Webhook**.
+    *   **Name:** `send-signup-email`
+    *   **Table:** `auth.users`
+    *   **Events:** `INSERT`
+    *   **Type:** `HTTP Request`
+    *   **URL:** Your deployed function URL (e.g., `https://<project-ref>.supabase.co/functions/v1/send-auth-email`)
+    *   **Method:** `POST`
+    *   **HTTP Headers:**
+        *   `Content-Type`: `application/json`
+        *   `Authorization`: `Bearer <Your Anon Key>` (ensure the function verifies this or is public)
+    *   Click **Confirm**.
+
+## 3. Supabase Auth Configuration (Redirects)
 
 1.  **Enable Email Confirmations:**
     *   Go to **Authentication** -> **Providers** -> **Email**.
@@ -48,37 +61,15 @@ To ensure emails are sent reliably and from your custom domain, configure Supaba
 2.  **Configure Redirect URLs:**
     *   Go to **Authentication** -> **URL Configuration**.
     *   **Site URL:** Set this to your production URL: `https://prohori.app`.
-    *   **Redirect URLs:** Add the following URLs:
+    *   **Redirect URLs:** Add the following URLs **exactly**:
         *   `https://prohori.app/auth/callback`
+        *   `https://www.prohori.app/auth/callback`
+        *   `https://prohori.app/auth/confirmed`
+        *   `https://www.prohori.app/auth/confirmed`
         *   `http://localhost:3000/auth/callback` (for local development)
     *   Click "Save".
 
-## 4. Update Email Templates
-
-Since Supabase is handling the email content (sending via Resend SMTP), you need to ensure the templates are correct.
-
-1.  **Go to Email Templates:**
-    *   Go to **Authentication** -> **Email Templates**.
-2.  **Confirm Signup:**
-    *   **Subject:** `Confirm your Prohori account`
-    *   **Body:** Ensure the link uses `{{ .ConfirmationURL }}`.
-    *   Example Body:
-        ```html
-        <h2>Welcome to Prohori!</h2>
-        <p>Please confirm your email address by clicking the link below:</p>
-        <p><a href="{{ .ConfirmationURL }}">Confirm Email</a></p>
-        ```
-3.  **Reset Password:**
-    *   **Subject:** `Reset your Prohori password`
-    *   **Body:** Ensure the link uses `{{ .ConfirmationURL }}` (or `{{ .SiteURL }}/update-password?access_token={{ .Token }}` depending on your flow, but usually `.ConfirmationURL` handles the redirect to the callback).
-    *   Example Body:
-        ```html
-        <h2>Reset Password</h2>
-        <p>Click the link below to reset your password:</p>
-        <p><a href="{{ .ConfirmationURL }}">Reset Password</a></p>
-        ```
-
-## 5. Environment Variables (Vercel)
+## 4. Environment Variables (Vercel)
 
 Ensure your Vercel project has the correct environment variables.
 
@@ -86,4 +77,8 @@ Ensure your Vercel project has the correct environment variables.
 *   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key.
 *   `NEXT_PUBLIC_APP_URL`: `https://prohori.app` (Recommended for consistent redirects).
 
-Once these steps are completed, the signup and login flows should work correctly with email verification.
+## 5. Troubleshooting 500 Errors
+
+If you still see 500 errors:
+1.  Check the **Edge Function Logs** in Supabase Dashboard -> Edge Functions -> `send-auth-email` -> Logs.
+2.  Check if the **Resend API Key** is correct and has permission to send from `joruri.prohori.app`.
