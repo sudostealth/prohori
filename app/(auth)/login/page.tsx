@@ -33,6 +33,7 @@ export default function LoginPage() {
       });
 
       if (error) {
+        console.error('Login error:', error);
         toast.error(error.message);
       } else {
         // Check if admin
@@ -48,7 +49,8 @@ export default function LoginPage() {
           router.refresh();
         }
       }
-    } catch {
+    } catch (err) {
+      console.error('Unexpected login error:', err);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

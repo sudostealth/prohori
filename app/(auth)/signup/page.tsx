@@ -46,6 +46,7 @@ export default function SignupPage() {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             full_name: fullName,
             company_name: companyName,
@@ -54,12 +55,14 @@ export default function SignupPage() {
       });
 
       if (error) {
+        console.error('Signup error:', error);
         toast.error(error.message);
       } else {
         toast.success('Account created! Please check your email to verify.');
         router.push('/login');
       }
-    } catch {
+    } catch (err) {
+      console.error('Unexpected signup error:', err);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
