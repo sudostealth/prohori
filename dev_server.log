@@ -6,16 +6,19 @@
  ⚠ Port 3001 is in use, trying 3002 instead.
  ⚠ Port 3002 is in use, trying 3003 instead.
  ⚠ Port 3003 is in use, trying 3004 instead.
+ ⚠ Port 3004 is in use, trying 3005 instead.
+ ⚠ Port 3005 is in use, trying 3006 instead.
   ▲ Next.js 14.2.35
-  - Local:        http://localhost:3004
+  - Local:        http://localhost:3006
   - Environments: .env.local
 
  ✓ Starting...
  ✓ Ready in 2.5s
  ○ Compiling /middleware ...
- ✓ Compiled /middleware in 1525ms (191 modules)
+ ✓ Compiled /middleware in 1603ms (191 modules)
  ○ Compiling /login ...
 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (133kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ✓ Compiled /login in 12.9s (1634 modules)
- GET /login 200 in 13874ms
- ✓ Compiled in 1100ms (781 modules)
+ ✓ Compiled /login in 10.4s (1633 modules)
+ GET /login 200 in 11510ms
+ ✓ Compiled in 1196ms (781 modules)
+ performance (consider using Buffer instead and decode when needed)
