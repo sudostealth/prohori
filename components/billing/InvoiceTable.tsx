@@ -1,15 +1,10 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-// const invoices = [
-//   { id: 'INV-2026-001', date: 'Feb 01, 2026', amount: '৳2,499', status: 'Paid', method: 'bKash' },
-//   { id: 'INV-2026-002', date: 'Jan 01, 2026', amount: '৳2,499', status: 'Paid', method: 'bKash' },
-//   { id: 'INV-2025-012', date: 'Dec 01, 2025', amount: '৳2,499', status: 'Paid', method: 'Nagad' },
-// ];
+import { Invoice } from '@/lib/types';
 
 export function InvoiceTable() {
-  const invoices: any[] = []; // Fetch from DB later
+  const invoices: Invoice[] = []; // Fetch from DB later
 
   return (
     <div className="rounded-md border border-border bg-surface-2/20">

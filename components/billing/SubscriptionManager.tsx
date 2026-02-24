@@ -4,16 +4,11 @@ import { useState } from 'react';
 import { PlanCard } from './PlanCard';
 import { createSubscriptionRequest } from '@/app/actions/subscription';
 import { toast } from 'react-hot-toast';
+import { Subscription } from '@/lib/types';
 
 interface PricingPlan {
     price: number;
     features: string[];
-}
-
-interface Subscription {
-    id: string;
-    plan: string;
-    status: string;
 }
 
 export function SubscriptionManager({
@@ -30,8 +25,9 @@ export function SubscriptionManager({
         try {
             await createSubscriptionRequest(plan, price);
             toast.success('Subscription request sent!');
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to send request');
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to send request';
+            toast.error(errorMessage);
         } finally {
             setLoading(null);
         }

@@ -41,7 +41,7 @@ export async function getAgentInstallCommand() {
         wazuh_agent_id: 'pending',
         status: 'pending'
       })
-      .select('install_token')
+      .select('install_token, id')
       .single();
 
     if (error) {

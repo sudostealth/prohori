@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Loader2, XCircle, Server } from 'lucide-react';
+import { Server } from 'lucide-react';
+import { Agent } from '@/lib/types';
 
-export function AgentStatusList({ agents = [] }: { agents?: any[] }) {
+export function AgentStatusList({ agents = [] }: { agents?: Agent[] }) {
   return (
     <Card className="glass-card">
       <CardHeader>
