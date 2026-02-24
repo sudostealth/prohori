@@ -1,11 +1,9 @@
 import { AlertCircle } from 'lucide-react';
 
-export function LiveAlertTicker() {
-  const alerts = [
-    "Blocked SQL Injection attempt from 192.168.1.5",
-    "Suspicious file modification in /var/www/html",
-    "Brute force login attempt blocked (user: admin)"
-  ];
+export function LiveAlertTicker({ alerts = [] }: { alerts?: any[] }) {
+  const alertTexts = alerts.length > 0
+    ? alerts.map(a => `${a.title} (${a.severity})`)
+    : ["No recent critical threats detected"];
 
   return (
     <div className="w-full bg-surface-2/50 border-y border-border py-2 px-4 overflow-hidden flex items-center">
@@ -18,7 +16,7 @@ export function LiveAlertTicker() {
       </div>
       <div className="flex-1 overflow-hidden whitespace-nowrap">
         <div className="animate-marquee inline-block">
-          {alerts.map((alert, i) => (
+          {alertTexts.map((alert, i) => (
             <span key={i} className="mx-8 text-sm text-text-muted">
               <AlertCircle className="inline w-3 h-3 mr-1 text-accent" />
               {alert}
