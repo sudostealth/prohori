@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
+import { Alert } from '@/lib/types';
 
-export function ThreatFeedTable({ alerts = [] }: { alerts?: any[] }) {
+export function ThreatFeedTable({ alerts = [] }: { alerts?: Alert[] }) {
   return (
     <Card className="glass-card">
       <CardHeader className="flex flex-row items-center justify-between pb-2">

@@ -1,6 +1,7 @@
 import { AlertCircle } from 'lucide-react';
+import { Alert } from '@/lib/types';
 
-export function LiveAlertTicker({ alerts = [] }: { alerts?: any[] }) {
+export function LiveAlertTicker({ alerts = [] }: { alerts?: Alert[] }) {
   const alertTexts = alerts.length > 0
     ? alerts.map(a => `${a.title} (${a.severity})`)
     : ["No recent critical threats detected"];

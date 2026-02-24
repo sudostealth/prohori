@@ -17,15 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from 'react-hot-toast';
-
-interface Subscription {
-  id: string;
-  plan: string;
-  status: string;
-  price_bdt: number;
-  expires_at: string | null;
-  companies: { name: string } | null;
-}
+import { Subscription } from '@/lib/types';
 
 export default function AdminSubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -59,9 +51,15 @@ export default function AdminSubscriptionsPage() {
         toast.success(`Subscription ${newStatus}`);
         // Update local state
         setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
-    } catch (error: any) {
-        console.error('Error updating subscription:', error);
-        toast.error('Failed to update status');
+    } catch (error: unknown) {
+        // Safe error handling
+        if (error instanceof Error) {
+            console.error('Error updating subscription:', error.message);
+            toast.error(`Failed to update status: ${error.message}`);
+        } else {
+            console.error('Unknown error updating subscription:', error);
+            toast.error('Failed to update status');
+        }
     }
   };
 
