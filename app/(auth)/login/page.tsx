@@ -37,31 +37,38 @@ export default function LoginPage() {
       if (error) {
         console.error('Login error:', error);
         toast.error(error.message);
+        setLoading(false);
       } else {
         // Show success animation
         setIsSuccess(true);
+        toast.success('Logged in successfully!');
 
-        // Wait a bit for animation, then redirect
-        setTimeout(async () => {
-           // Check if admin
+        // Check admin status immediately
+        try {
             const isAdmin = await checkIsAdmin(email);
-
             if (isAdmin) {
+              // Use window.location.href for subdomain redirect
               window.location.href = 'https://hq.prohori.app';
             } else {
               router.push('/dashboard');
               router.refresh();
             }
-        }, 1500);
+        } catch (adminCheckError) {
+            console.error('Admin check failed:', adminCheckError);
+            // Fallback to dashboard on error
+            router.push('/dashboard');
+            router.refresh();
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Unexpected login error:', err);
-      toast.error('An unexpected error occurred. Please try again.');
+      const message = err.message || 'An unexpected error occurred.';
+      if (message.includes('429')) {
+         toast.error('Too many login attempts. Please try again later.');
+      } else {
+         toast.error(message);
+      }
       setLoading(false);
-    }
-    // Do NOT set loading to false in finally if success, to prevent UI flicker
-    if (!isSuccess) {
-         setLoading(false);
     }
   };
 

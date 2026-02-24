@@ -76,6 +76,9 @@ export async function middleware(req: NextRequest) {
 
        const mainDomain = hostname.replace("hq.", "");
        const protocol = url.protocol;
+       // Prevent loop: If we came from the login page, don't redirect back blindly if we expected a session.
+       // But we can't easily know if we "expected" a session.
+       // However, redirecting to "/" on main domain is standard behavior for unauthed users.
        return NextResponse.redirect(`${protocol}//${mainDomain}/`);
     }
 
