@@ -1,12 +1,11 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
-export const createServerClient = () => {
+export const createRouteClient = () => {
   const isProd = process.env.NODE_ENV === 'production';
-  // Note: on the server, we don't have window, so we just use the domain if in prod
   const cookieDomain = isProd ? process.env.NEXT_PUBLIC_COOKIE_DOMAIN : undefined;
 
-  return createServerComponentClient({
+  return createRouteHandlerClient({
     cookies,
   }, {
     cookieOptions: cookieDomain ? {

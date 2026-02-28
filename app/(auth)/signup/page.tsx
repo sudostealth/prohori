@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'react-hot-toast';
 import { GoogleSignInButton } from '@/components/ui/google-sign-in-button';
 import { PasswordInput } from '@/components/ui/password-input';
 import { PasswordStrengthMeter, checkPasswordStrength } from '@/components/ui/password-strength-meter';
@@ -23,23 +22,25 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false); // Track success state
+  const [errorMsg, setErrorMsg] = useState('');
   // const router = useRouter(); // Removing unused router
   const supabase = createClient();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
 
     try {
       if (password !== confirmPassword) {
-        toast.error('Passwords do not match.');
+        setErrorMsg('Passwords do not match.');
         setLoading(false);
         return;
       }
 
       const strength = checkPasswordStrength(password);
       if (!Object.values(strength).every(Boolean)) {
-        toast.error('Password does not meet all requirements.');
+        setErrorMsg('Password does not meet all requirements.');
         setLoading(false);
         return;
       }
@@ -58,14 +59,18 @@ export default function SignupPage() {
 
       if (error) {
         console.error('Signup error:', error);
-        toast.error(error.message);
+        if (error.message.toLowerCase().includes('already registered')) {
+            setErrorMsg('This email is already registered. Please log in.');
+        } else {
+            setErrorMsg(error.message);
+        }
       } else {
         // Instead of toast and redirect, show success animation
         setIsSuccess(true);
       }
     } catch (err) {
       console.error('Unexpected signup error:', err);
-      toast.error('An unexpected error occurred. Please try again.');
+      setErrorMsg('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -203,6 +208,13 @@ export default function SignupPage() {
                           className="bg-surface-2 border-border text-white focus-visible:ring-primary"
                         />
                       </div>
+
+                      {errorMsg && (
+                        <div className="text-red-500 text-sm font-medium pt-2">
+                           {errorMsg}
+                        </div>
+                      )}
+
                       <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-background font-bold h-11 mt-4" disabled={loading}>
                         {loading ? 'Creating account...' : 'Create Account'}
                       </Button>

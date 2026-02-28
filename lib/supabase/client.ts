@@ -1,13 +1,13 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export const createClient = () => {
-  // Try to determine the cookie domain dynamically or fall back to a reasonable default
   const isProd = process.env.NODE_ENV === 'production';
-  // If in production, we want to share cookies across subdomains (e.g., .prohori.app)
-  // For local development (localhost), we usually don't need to specify domain or just use localhost
+  let cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
 
-  // NOTE: In a real deployment, you should probably set this via an env var like NEXT_PUBLIC_COOKIE_DOMAIN
-  const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+  // Don't use the production cookie domain on localhost to prevent cookie rejection
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    cookieDomain = undefined;
+  }
 
   return createClientComponentClient({
     cookieOptions: cookieDomain ? {

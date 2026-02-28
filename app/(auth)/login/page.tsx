@@ -21,12 +21,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
   const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -36,7 +38,11 @@ export default function LoginPage() {
 
       if (error) {
         console.error('Login error:', error);
-        toast.error(error.message);
+        if (error.message.toLowerCase().includes('invalid login credentials')) {
+            setErrorMsg('Invalid email or password. Please try again.');
+        } else {
+            setErrorMsg(error.message);
+        }
         setLoading(false);
       } else {
         // Show success animation
@@ -47,8 +53,10 @@ export default function LoginPage() {
         try {
             const isAdmin = await checkIsAdmin(email);
             if (isAdmin) {
-              // Use window.location.href for subdomain redirect
-              window.location.href = 'https://hq.prohori.app';
+              // Wait a tiny bit to ensure cookies are set, then redirect
+              setTimeout(() => {
+                window.location.href = 'https://hq.prohori.app';
+              }, 500);
             } else {
               router.push('/dashboard');
               router.refresh();
@@ -60,13 +68,15 @@ export default function LoginPage() {
             router.refresh();
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Unexpected login error:', err);
-      const message = err.message || 'An unexpected error occurred.';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorObj = err as any;
+      const message = errorObj.message || 'An unexpected error occurred.';
       if (message.includes('429')) {
-         toast.error('Too many login attempts. Please try again later.');
+         setErrorMsg('Too many login attempts. Please try again later.');
       } else {
-         toast.error(message);
+         setErrorMsg(message);
       }
       setLoading(false);
     }
@@ -169,6 +179,13 @@ export default function LoginPage() {
                           <PasswordStrengthMeter password={password} />
                         </div>
                       </div>
+
+                      {errorMsg && (
+                        <div className="text-red-500 text-sm font-medium pt-2">
+                           {errorMsg}
+                        </div>
+                      )}
+
                       <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-background font-bold h-11 mt-4" disabled={loading}>
                         {loading ? 'Logging in...' : 'Log in'}
                       </Button>

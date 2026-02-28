@@ -14,29 +14,16 @@ export async function middleware(req: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) {
     console.error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
-    // If we are missing critical config, we can't proceed with auth.
-    // Return a 500 error with a clear message instead of crashing with 502 DNS error
     return new NextResponse(
       JSON.stringify({ error: 'Configuration Error: Missing Supabase URL' }),
       { status: 500, headers: { 'content-type': 'application/json' } }
     );
   }
 
-  // Check for localhost in production environment
-  if (process.env.NODE_ENV === 'production' && supabaseUrl.includes('localhost')) {
-     console.error('Invalid Configuration: NEXT_PUBLIC_SUPABASE_URL points to localhost in production.');
-     return new NextResponse(
-        JSON.stringify({
-          error: 'Configuration Error: Application is running in production but configured with localhost URL.',
-          tip: 'Update your Vercel Environment Variables to point to your live Supabase project URL.'
-        }),
-        { status: 500, headers: { 'content-type': 'application/json' } }
-      );
-  }
-
   // Configure cookie options for cross-subdomain auth
   const isProd = process.env.NODE_ENV === 'production';
-  const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+  // Use domain only in production to avoid localhost cookie rejections
+  const cookieDomain = isProd ? process.env.NEXT_PUBLIC_COOKIE_DOMAIN : undefined;
 
   let session = null;
 
@@ -46,7 +33,7 @@ export async function middleware(req: NextRequest) {
         domain: cookieDomain,
         path: '/',
         sameSite: 'lax',
-        secure: isProd,
+        secure: true,
       } : undefined
     });
 
@@ -54,9 +41,6 @@ export async function middleware(req: NextRequest) {
     session = data.session;
   } catch (error) {
     console.error('Supabase Auth Error in Middleware:', error);
-    // If auth fails (e.g. connection error), proceed as unauthenticated
-    // rather than crashing the whole request, unless it's critical.
-    // For now, we treat as no session.
     session = null;
   }
 
@@ -69,16 +53,8 @@ export async function middleware(req: NextRequest) {
 
   if (isHqSubdomain) {
     if (!session) {
-       // Redirect to main site login instead of landing page to prompt login if needed
-       // Or landing page as requested previously.
-       // User said: "when admin login... redirect to hq.prohori.app. otherwise if anyone search without login... redirect to landing page"
-       // So redirecting to landing page is correct behavior for unauthenticated users on HQ.
-
        const mainDomain = hostname.replace("hq.", "");
        const protocol = url.protocol;
-       // Prevent loop: If we came from the login page, don't redirect back blindly if we expected a session.
-       // But we can't easily know if we "expected" a session.
-       // However, redirecting to "/" on main domain is standard behavior for unauthed users.
        return NextResponse.redirect(`${protocol}//${mainDomain}/`);
     }
 
