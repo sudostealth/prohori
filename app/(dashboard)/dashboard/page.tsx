@@ -4,11 +4,22 @@ import { LiveAlertTicker } from '@/components/dashboard/LiveAlertTicker';
 import { ThreatFeedTable } from '@/components/dashboard/ThreatFeedTable';
 import { ServerHealthChart } from '@/components/dashboard/ServerHealthChart';
 import { AgentStatusList } from '@/components/dashboard/AgentStatusList';
-import { getDashboardStats, getRecentAlerts, getAgents } from '@/app/actions/dashboard';
+import { getDashboardStats, getRecentAlerts, getAgents, syncWazuhAlerts, syncWazuhAgents } from '@/app/actions/dashboard';
 import Link from 'next/link';
 import { Alert, Agent } from '@/lib/types';
 
 export default async function DashboardPage() {
+  // Attempt to sync from Wazuh first
+  // Note: in a real production app, this would be handled by a background worker/cron,
+  // but triggering it on dashboard load ensures fresh data if environment vars are present.
+  try {
+      // Ignore errors silently for dashboard render, logging handled inside
+      await syncWazuhAlerts();
+      await syncWazuhAgents();
+  } catch (e) {
+      console.error("Wazuh sync failed on dashboard load", e);
+  }
+
   const stats = await getDashboardStats() || { blocked: 0, online: 0, status: 'secure' };
 
   // Use unknown casting to avoid ESLint any errors

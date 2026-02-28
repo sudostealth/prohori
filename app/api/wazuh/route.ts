@@ -31,23 +31,34 @@ export async function POST(req: Request) {
       rateLimit.set(ip, { count: 1, resetAt: now + WINDOW_MS });
     }
 
-    if (!process.env.WAZUH_API_BASE_URL) {
+    if (!process.env.WAZUH_API_BASE_URL || !process.env.WAZUH_API_USER || !process.env.WAZUH_API_PASSWORD) {
       return NextResponse.json({ 
-        data: { message: "Mocked Wazuh API Response since WAZUH_URL is missing", endpoint, method },
+        data: { message: "Mocked Wazuh API Response since WAZUH env vars are missing", endpoint, method },
         mocked: true
       });
     }
 
-    // In a real implementation this would fetch with basic auth from the actual Wazuh API:
-    // const auth = Buffer.from(`${process.env.WAZUH_API_USER}:${process.env.WAZUH_API_PASSWORD}`).toString('base64');
-    // const res = await fetch(`${process.env.WAZUH_API_BASE_URL}${endpoint}`, { headers: { Authorization: `Basic ${auth}` }});
-    // return NextResponse.json(await res.json());
-
-    return NextResponse.json({ 
-      data: { message: "Mocked Wazuh API Response", endpoint, method },
-      mocked: true
+    const auth = Buffer.from(`${process.env.WAZUH_API_USER}:${process.env.WAZUH_API_PASSWORD}`).toString('base64');
+    const res = await fetch(`${process.env.WAZUH_API_BASE_URL}${endpoint}`, {
+        method,
+        headers: {
+            Authorization: `Basic ${auth}`,
+            'Content-Type': 'application/json'
+        },
+        // ignore self signed certificates for dev if needed, but fetch API doesn't allow it easily without custom agent
+        // For production, Wazuh should have a valid certificate or be fronted by a proxy
     });
-  } catch {
+
+    if (!res.ok) {
+        console.error(`Wazuh API Error: ${res.status} ${res.statusText}`);
+        return NextResponse.json({ error: `Wazuh API returned ${res.status}` }, { status: res.status });
+    }
+
+    const data = await res.json();
+    return NextResponse.json(data);
+
+  } catch (err) {
+    console.error('Wazuh Proxy Exception:', err);
     return NextResponse.json({ error: 'Failed to proxy Wazuh request' }, { status: 500 });
   }
 }
