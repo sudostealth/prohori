@@ -6,6 +6,7 @@ import { decrypt } from "@/lib/encryption";
 import { withMonitoring } from "@/lib/monitor";
 import { aiRateLimiter, getClientIp, rateLimitHeaders } from "@/lib/rate-limit";
 import { AIService } from "@/lib/ai";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 export const dynamic = 'force-dynamic';
 
@@ -49,23 +50,17 @@ const aiService = new AIService({
   fallbackEnabled: process.env.AI_FALLBACK_ENABLED === 'true' || true
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGet(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
+    const supabaseServer = createServerClient();
+    const { data: { user } } = await supabaseServer.auth.getUser();
+
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    const { data: { user } } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    
-    if (!user) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: company } = await supabase
       .from("companies")
       .select("id, name")

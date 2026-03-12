@@ -211,13 +211,12 @@ export async function checkLimit(
 
 export async function getCompanySubscription(companyId: string) {
   const { data, error } = await supabase
-    .from('subscriptions')
+    .from('active_subscriptions')
     .select(`
       *,
       plan:subscription_plans(*)
     `)
     .eq('company_id', companyId)
-    .eq('status', 'active')
     .gte('expires_at', new Date().toISOString())
     .single();
 

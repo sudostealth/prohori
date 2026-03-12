@@ -33,25 +33,24 @@ async function handlePost(req: NextRequest): Promise<NextResponse> {
       .from("coupon_codes")
       .select("*")
       .eq("code", code.toUpperCase())
-      .eq("is_active", true)
       .single();
 
-    if (error || !coupon) {
+    if (error || !coupon || !coupon.is_active) {
       const result = { valid: false, message: "Invalid coupon code" };
-      // Cache invalid result briefly (30s) to reduce DB hammering on invalid codes
-      cache.set(cacheKey, result, CACHE_TTL.COUPON);
+      // Cache invalid result briefly (10s) to reduce DB hammering on invalid codes
+      cache.set(cacheKey, result, 10_000);
       return NextResponse.json(result);
     }
 
     if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
       const result = { valid: false, message: "This coupon has expired" };
-      cache.set(cacheKey, result, CACHE_TTL.COUPON);
+      cache.set(cacheKey, result, 10_000);
       return NextResponse.json(result);
     }
 
     if (coupon.max_uses && coupon.uses_count >= coupon.max_uses) {
       const result = { valid: false, message: "Coupon usage limit reached" };
-      cache.set(cacheKey, result, CACHE_TTL.COUPON);
+      cache.set(cacheKey, result, 10_000);
       return NextResponse.json(result);
     }
 

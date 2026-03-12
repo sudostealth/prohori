@@ -63,6 +63,23 @@ export default function AIAnalystChat() {
     setIsLoading(true);
     
     try {
+      // First fetch server data
+      let currentServerData = {};
+      try {
+        const serverDataRes = await fetch("/api/ai-server", {
+          method: "GET",
+          headers: {
+            // Need authorization headers in actual implementation but handled via auth cookies natively
+          }
+        });
+        if (serverDataRes.ok) {
+          const resJson = await serverDataRes.json();
+          currentServerData = resJson.serverData || {};
+        }
+      } catch (err) {
+        console.warn("Failed to fetch server data for AI context:", err);
+      }
+
       const response = await fetch("/api/ai-server", {
         method: "POST",
         headers: {
@@ -71,7 +88,7 @@ export default function AIAnalystChat() {
         body: JSON.stringify({
           question: input,
           language: language,
-          serverData: {}
+          serverData: currentServerData
         })
       });
       
