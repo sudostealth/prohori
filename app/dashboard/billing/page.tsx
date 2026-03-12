@@ -36,9 +36,12 @@ export default async function BillingPage() {
     .limit(1)
     .maybeSingle();
 
+  // Default to profile.company_id if companies joined fetch doesn't return properly, else empty string
+  const resolvedCompanyId = (company?.id as string) || (profile?.company_id as string) || "";
+
   return (
     <BillingClient
-      companyId={company?.id as string}
+      companyId={resolvedCompanyId}
       plans={plans || []}
       activeSub={activeSub}
       latestRequest={latestRequest}

@@ -65,6 +65,11 @@ export default function BillingClient({ companyId, plans, activeSub, latestReque
 
   const confirmRequest = async () => {
     if (!selectedPlan) return;
+    if (!companyId) {
+      toast.error("Company profile not found. Please log out and log back in, or contact support.");
+      return;
+    }
+
     setRequesting(true);
     try {
       const discountAmt = couponResult?.valid
