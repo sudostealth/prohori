@@ -11,15 +11,12 @@ export default async function AdminLayout({
 }) {
   const adminSegment = params.adminSegment;
 
-  // If this is the login page, render WITHOUT AdminShell
-  // The login page has its own layout in app/[adminSegment]/login/layout.tsx
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.ADMIN_EMAIL || "";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "admin@prohori.app";
 
-  // Check if user is already logged in as admin - redirect to dashboard
-  if (user && user.email === adminEmail) {
-    redirect(`/${adminSegment}`);
+  if (!user || user.email !== adminEmail) {
+    redirect(`/${adminSegment}/login`);
   }
 
   // Render with AdminShell for authenticated admin pages
