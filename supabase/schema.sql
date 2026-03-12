@@ -298,6 +298,15 @@ CREATE TABLE IF NOT EXISTS wazuh_connections (
 );
 
 -- =============================================================================
+-- Admin Access Function
+-- =============================================================================
+CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (auth.jwt() ->> 'email') = 'admin@prohori.app';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =============================================================================
 -- ROW LEVEL SECURITY (RLS)
 -- =============================================================================
 
@@ -321,33 +330,45 @@ ALTER TABLE usage_tracking ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wazuh_connections ENABLE ROW LEVEL SECURITY;
 
 -- Companies policies
-CREATE POLICY "companies_select_own" ON companies FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY "companies_select_own" ON companies FOR SELECT USING (owner_id = auth.uid() OR is_admin());
 CREATE POLICY "companies_insert_own" ON companies FOR INSERT WITH CHECK (owner_id = auth.uid());
-CREATE POLICY "companies_update_own" ON companies FOR UPDATE USING (owner_id = auth.uid());
+CREATE POLICY "companies_update_own" ON companies FOR UPDATE USING (owner_id = auth.uid() OR is_admin());
+CREATE POLICY "companies_delete_admin" ON companies FOR DELETE USING (is_admin());
 CREATE POLICY "companies_select_member" ON companies FOR SELECT
   USING (id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
 
 -- Profiles policies
-CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (auth.uid() = id OR is_admin());
 CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 -- Subscription plans: published plans are public readable
-CREATE POLICY "plans_select_published" ON subscription_plans FOR SELECT USING (is_published = TRUE);
+-- Subscription plans: published plans are public readable, admin can read/write all
+CREATE POLICY "plans_select_published" ON subscription_plans FOR SELECT USING (is_published = TRUE OR is_admin());
+CREATE POLICY "plans_insert_admin" ON subscription_plans FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "plans_update_admin" ON subscription_plans FOR UPDATE USING (is_admin());
+CREATE POLICY "plans_delete_admin" ON subscription_plans FOR DELETE USING (is_admin());
 
--- Subscription requests: company owner
+-- Subscription requests: company owner or admin
 CREATE POLICY "sub_requests_select_own" ON subscription_requests FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()) OR is_admin());
 CREATE POLICY "sub_requests_insert_own" ON subscription_requests FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()) OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+CREATE POLICY "sub_requests_update_admin" ON subscription_requests FOR UPDATE USING (is_admin());
+CREATE POLICY "sub_requests_delete_admin" ON subscription_requests FOR DELETE USING (is_admin());
 
--- Active subscriptions: company owner
+-- Active subscriptions: company owner or admin
 CREATE POLICY "active_sub_select_own" ON active_subscriptions FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()) OR is_admin());
+CREATE POLICY "active_sub_insert_admin" ON active_subscriptions FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "active_sub_update_admin" ON active_subscriptions FOR UPDATE USING (is_admin());
+CREATE POLICY "active_sub_delete_admin" ON active_subscriptions FOR DELETE USING (is_admin());
 
--- Coupon codes: company owner
-CREATE POLICY "coupons_select_own" ON coupon_codes FOR SELECT
-  USING (TRUE);
+-- Coupon codes: public read, admin write
+CREATE POLICY "coupons_select_own" ON coupon_codes FOR SELECT USING (TRUE);
+CREATE POLICY "coupons_insert_admin" ON coupon_codes FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY "coupons_update_admin" ON coupon_codes FOR UPDATE USING (is_admin());
+CREATE POLICY "coupons_delete_admin" ON coupon_codes FOR DELETE USING (is_admin());
 
 -- Platform content: published content is public
 CREATE POLICY "content_select_published" ON platform_content FOR SELECT USING (is_published = TRUE);
