@@ -325,7 +325,13 @@ CREATE POLICY "companies_select_own" ON companies FOR SELECT USING (owner_id = a
 CREATE POLICY "companies_insert_own" ON companies FOR INSERT WITH CHECK (owner_id = auth.uid());
 CREATE POLICY "companies_update_own" ON companies FOR UPDATE USING (owner_id = auth.uid());
 CREATE POLICY "companies_select_member" ON companies FOR SELECT
-  USING (id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  USING (
+    EXISTS (
+      SELECT 1 FROM hrm_members
+      WHERE hrm_members.company_id = companies.id
+      AND hrm_members.user_id = auth.uid()
+    )
+  );
 
 -- Profiles policies
 CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (auth.uid() = id);
@@ -337,13 +343,13 @@ CREATE POLICY "plans_select_published" ON subscription_plans FOR SELECT USING (i
 
 -- Subscription requests: company owner
 CREATE POLICY "sub_requests_select_own" ON subscription_requests FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "sub_requests_insert_own" ON subscription_requests FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 
 -- Active subscriptions: company owner
 CREATE POLICY "active_sub_select_own" ON active_subscriptions FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 
 -- Coupon codes: company owner
 CREATE POLICY "coupons_select_own" ON coupon_codes FOR SELECT
@@ -354,78 +360,100 @@ CREATE POLICY "content_select_published" ON platform_content FOR SELECT USING (i
 
 -- HRM members: company members
 CREATE POLICY "hrm_select_company" ON hrm_members FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()) OR user_id = auth.uid());
+  USING (
+    user_id = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM companies
+      WHERE companies.id = hrm_members.company_id
+      AND companies.owner_id = auth.uid()
+    )
+  );
 CREATE POLICY "hrm_insert_company" ON hrm_members FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM companies
+      WHERE companies.id = hrm_members.company_id
+      AND companies.owner_id = auth.uid()
+    )
+  );
 CREATE POLICY "hrm_update_company" ON hrm_members FOR UPDATE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (
+    EXISTS (
+      SELECT 1 FROM companies
+      WHERE companies.id = hrm_members.company_id
+      AND companies.owner_id = auth.uid()
+    )
+  );
 CREATE POLICY "hrm_delete_company" ON hrm_members FOR DELETE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (
+    EXISTS (
+      SELECT 1 FROM companies
+      WHERE companies.id = hrm_members.company_id
+      AND companies.owner_id = auth.uid()
+    )
+  );
 
 -- Audit logs: company owner
 CREATE POLICY "audit_select_own" ON audit_logs FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "audit_insert_own" ON audit_logs FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 
 -- Security alerts: company can read own
 CREATE POLICY "alerts_select_own" ON security_alerts FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid())
-    OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  USING (is_company_owner(company_id) OR is_company_member(company_id));
 CREATE POLICY "alerts_insert_own" ON security_alerts FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 CREATE POLICY "alerts_update_own" ON security_alerts FOR UPDATE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 
 -- Server metrics: company can read own
 CREATE POLICY "metrics_select_own" ON server_metrics FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "metrics_insert_own" ON server_metrics FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 
 -- Endpoints: company can read own
 CREATE POLICY "endpoints_select_own" ON endpoints FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "endpoints_insert_own" ON endpoints FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 CREATE POLICY "endpoints_update_own" ON endpoints FOR UPDATE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "endpoints_delete_own" ON endpoints FOR DELETE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 
 -- Wazuh agents: company can manage own
 CREATE POLICY "wazuh_agents_select_own" ON wazuh_agents FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid())
-    OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  USING (is_company_owner(company_id) OR is_company_member(company_id));
 CREATE POLICY "wazuh_agents_insert_own" ON wazuh_agents FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 CREATE POLICY "wazuh_agents_update_own" ON wazuh_agents FOR UPDATE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "wazuh_agents_delete_own" ON wazuh_agents FOR DELETE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 
 -- Wazuh alerts: company can read own
 CREATE POLICY "wazuh_alerts_select_own" ON wazuh_alerts FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid())
-    OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  USING (is_company_owner(company_id) OR is_company_member(company_id));
 
 -- Usage tracking: company can manage own
 CREATE POLICY "usage_select_own" ON usage_tracking FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "usage_insert_own" ON usage_tracking FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 CREATE POLICY "usage_update_own" ON usage_tracking FOR UPDATE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 
 -- Wazuh connections: company owner can manage own
 CREATE POLICY "wazuh_connections_select_own" ON wazuh_connections FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "wazuh_connections_insert_own" ON wazuh_connections FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  WITH CHECK (is_company_owner(company_id));
 CREATE POLICY "wazuh_connections_update_own" ON wazuh_connections FOR UPDATE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 CREATE POLICY "wazuh_connections_delete_own" ON wazuh_connections FOR DELETE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
+  USING (is_company_owner(company_id));
 
 -- =============================================================================
 -- INDEXES FOR PERFORMANCE
