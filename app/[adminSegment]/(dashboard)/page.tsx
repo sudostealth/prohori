@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const [companiesRes, activeSubs, pendingReqs, expiringSoon] = await Promise.all([
     supabase.from("companies").select("id, name, type, status, created_at").order("created_at", { ascending: false }),

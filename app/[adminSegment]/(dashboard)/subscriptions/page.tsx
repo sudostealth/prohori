@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import SubscriptionsClient from "@/components/admin/SubscriptionsClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSubscriptionsPage() {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: requests } = await supabase
     .from("subscription_requests")
     .select("*, companies(name), subscription_plans(name, price, billing_cycle)")

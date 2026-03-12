@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { createClient } from "@/lib/supabase/client";
 import { Loader2, CheckCircle, X } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
@@ -13,7 +12,6 @@ interface SubscriptionsClientProps {
 }
 
 export default function SubscriptionsClient({ requests }: SubscriptionsClientProps) {
-  const supabase = createClient();
   const [items, setItems] = useState(requests);
   const [rejectModal, setRejectModal] = useState<{ id: string; company: string } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -22,16 +20,13 @@ export default function SubscriptionsClient({ requests }: SubscriptionsClientPro
   const approve = async (reqId: string, companyId: string, planId: string) => {
     setLoading(reqId);
     try {
-      // Get plan billing cycle for expiry calculation
-      const { data: plan } = await supabase.from("subscription_plans").select("billing_cycle").eq("id", planId).single();
-      const expiresAt = plan?.billing_cycle === "yearly"
-        ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-      await supabase.from("subscription_requests").update({ status: "approved", resolved_at: new Date().toISOString() }).eq("id", reqId);
-      await supabase.from("active_subscriptions").upsert({
-        company_id: companyId, plan_id: planId, request_id: reqId, expires_at: expiresAt,
-      }, { onConflict: "company_id" });
+      const res = await fetch("/api/subscription/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reqId, companyId, planId, action: "approve" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to approve");
 
       setItems((prev) => prev.map((r) => r.id === reqId ? { ...r, status: "approved" } : r));
       toast.success("Subscription approved!");
@@ -46,11 +41,13 @@ export default function SubscriptionsClient({ requests }: SubscriptionsClientPro
     if (!rejectModal) return;
     setLoading(rejectModal.id);
     try {
-      await supabase.from("subscription_requests").update({
-        status: "rejected",
-        rejection_reason: rejectReason || "Request declined by admin",
-        resolved_at: new Date().toISOString(),
-      }).eq("id", rejectModal.id);
+      const res = await fetch("/api/subscription/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reqId: rejectModal.id, action: "reject", rejectReason: rejectReason || "Request declined by admin" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to reject");
 
       setItems((prev) => prev.map((r) => r.id === rejectModal.id ? { ...r, status: "rejected" } : r));
       setRejectModal(null);

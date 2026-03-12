@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { CreditCard, CheckCircle, Clock, X, Tag, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import type { SubscriptionPlan } from "@/types";
 
@@ -30,7 +29,6 @@ const fadeUpVariant: Variants = {
 };
 
 export default function BillingClient({ companyId, plans, activeSub, latestRequest }: BillingClientProps) {
-  const supabase = createClient();
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [coupon, setCoupon] = useState("");
   const [couponResult, setCouponResult] = useState<null | { valid: boolean; discount: number; type: string }>(null);
@@ -75,15 +73,21 @@ export default function BillingClient({ companyId, plans, activeSub, latestReque
           : couponResult.discount
         : 0;
 
-      const { error } = await supabase.from("subscription_requests").insert({
-        company_id: companyId,
-        plan_id: selectedPlan.id,
-        coupon_code: couponResult?.valid ? coupon : null,
-        discount_amount: discountAmt,
-        payment_method: paymentMethod,
-        transaction_id: transactionId,
+      const res = await fetch("/api/subscription/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id: companyId,
+          plan_id: selectedPlan.id,
+          coupon_code: couponResult?.valid ? coupon : null,
+          discount_amount: discountAmt,
+          payment_method: paymentMethod,
+          transaction_id: transactionId,
+        }),
       });
-      if (error) throw error;
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit request");
       toast.success("Subscription request sent! Awaiting admin approval.");
       setShowConfirm(false);
       setSelectedPlan(null);
