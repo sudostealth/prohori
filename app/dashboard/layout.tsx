@@ -1,0 +1,58 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import DashboardShell from "@/components/dashboard/DashboardShell";
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect("/auth/login");
+
+  // Fetch profile + company + subscription
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*, companies(*)")
+    .eq("id", user.id)
+    .single();
+
+  const { data: activeSub } = await supabase
+    .from("active_subscriptions")
+    .select("*, subscription_plans(*)")
+    .eq("company_id", profile?.company_id || "")
+    .maybeSingle();
+
+  // Check for pending subscription request
+  const { data: pendingReq } = await supabase
+    .from("subscription_requests")
+    .select("*, subscription_plans(name)")
+    .eq("company_id", profile?.company_id || "")
+    .in("status", ["pending", "rejected"])
+    .order("requested_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // Fetch active dashboard announcements
+  const { data: announcements } = await supabase
+    .from("platform_content")
+    .select("*")
+    .eq("is_published", true)
+    .in("target", ["dashboard", "both"])
+    .order("priority", { ascending: false })
+    .limit(3);
+
+  return (
+    <DashboardShell
+      user={user}
+      profile={profile}
+      activeSub={activeSub}
+      pendingReq={pendingReq}
+      announcements={announcements || []}
+    >
+      {children}
+    </DashboardShell>
+  );
+}
