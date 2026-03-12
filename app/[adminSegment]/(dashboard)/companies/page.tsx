@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import AdminShell from "@/components/admin/AdminShell";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, ShieldOff, Server } from "lucide-react";
@@ -35,7 +34,6 @@ export default async function AdminCompaniesPage({ params }: { params: { adminSe
     .order("created_at", { ascending: false });
 
   return (
-    <AdminShell adminSegment={params.adminSegment}>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Company Tenants</h1>
@@ -114,6 +112,5 @@ export default async function AdminCompaniesPage({ params }: { params: { adminSe
           </div>
         </Card>
       </div>
-    </AdminShell>
   );
 }

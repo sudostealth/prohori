@@ -283,6 +283,9 @@ export default function SignupPage() {
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Password</label>
                   <div className="relative">
                     <input
+                      id="password"
+                      name="password"
+                      autoComplete="new-password"
                       type={showPassword ? "text" : "password"}
                       className={`w-full h-12 bg-black/20 border rounded-xl px-4 pr-11 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all placeholder-gray-600 block ${errors.password ? "border-red-500/50" : "border-white/10"}`}
                       placeholder="Create a strong password"
@@ -344,6 +347,9 @@ export default function SignupPage() {
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Confirm Password</label>
                   <div className="relative">
                     <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      autoComplete="new-password"
                       type={showConfirm ? "text" : "password"}
                       className={`w-full h-12 bg-black/20 border rounded-xl px-4 pr-11 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all placeholder-gray-600 block ${passwordsMismatch ? "border-red-500/50 focus:border-red-500 focus:ring-red-500/50" : ""} ${passwordsMatch ? "border-green-500/50 focus:border-green-500 focus:ring-green-500/50" : "border-white/10"}`}
                       placeholder="Repeat your password"

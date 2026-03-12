@@ -469,7 +469,7 @@ CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO profiles (id, display_name, role)
-  VALUES (NEW.id, NEW.raw_user_meta_data->>'display_name', 'owner');
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'display_name', 'User'), 'owner');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
