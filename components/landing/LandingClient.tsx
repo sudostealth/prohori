@@ -396,76 +396,107 @@ export default function LandingClient({ plans, announcements }: LandingClientPro
           {plans.length > 0 ? (
             <motion.div 
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch"
             >
-              {plans.map((plan, index) => (
-                <motion.div key={plan.id} variants={fadeUpVariant} className={index === 1 ? 'md:-translate-y-4' : ''}>
-                  <Card className={`h-full relative overflow-hidden flex flex-col backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 ${index === 1 ? "bg-navy-800 border-cyan-500/50 shadow-[0_0_40px_rgba(0,212,255,0.15)]" : "bg-navy-900/40 border-white/10 hover:border-white/20"}`}>
-                    
-                    {/* Animated border beam effect for popular plan */}
-                    {index === 1 && (
-                      <div className="absolute inset-0 z-0 border-[2px] border-transparent [background:linear-gradient(var(--bg-primary),var(--bg-primary))_padding-box,linear-gradient(120deg,#00d4ff,#7c3aed,#00d4ff)_border-box] [animation:bg-spin_3s_linear_infinite]" style={{ backgroundSize: '200% auto' }} />
-                    )}
+              {plans.map((plan, index) => {
+                const isPopular = index === 1; // Or read from plan.is_popular if available
+                return (
+                  <motion.div key={plan.id} variants={fadeUpVariant} className={`h-full ${isPopular ? 'lg:-translate-y-4' : ''}`}>
+                    <Card className={`h-full relative flex flex-col backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 rounded-2xl ${isPopular ? "bg-navy-900 border-cyan-500/50 shadow-[0_0_30px_rgba(0,212,255,0.2)]" : "bg-navy-900/60 border-white/10 hover:border-white/20"}`}>
 
-                    {index === 1 && (
-                      <div className="absolute top-0 inset-x-0 py-1.5 bg-gradient-to-r from-cyan-500 to-purple-600 text-center text-xs font-bold text-white uppercase tracking-wider z-10">
-                        Most Popular
-                      </div>
-                    )}
-                    
-                    <CardContent className={`p-8 flex-1 flex flex-col relative z-10 ${index === 1 ? "pt-12" : ""}`}>
-                      <div className="mb-6">
-                        <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                        <div className="flex items-baseline gap-1 mt-4">
-                          <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-400">
-                            {formatPrice(plan.price, plan.billing_cycle).split('/')[0]}
-                          </span>
-                          <span className="text-gray-500 font-medium tracking-wide">
-                            /{plan.billing_cycle === "monthly" ? "mo" : "yr"}
+                      {isPopular && (
+                        <div className="absolute -top-px left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 rounded-t-2xl z-20" />
+                      )}
+
+                      {isPopular && (
+                        <div className="absolute -top-4 inset-x-0 flex justify-center z-20">
+                          <span className="py-1 px-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-[10px] sm:text-xs font-bold text-white uppercase tracking-widest rounded-full shadow-lg border border-white/10">
+                            Most Popular
                           </span>
                         </div>
-                      </div>
+                      )}
                       
-                      <div className="w-full h-px bg-white/10 my-6" />
+                      <CardContent className={`p-6 sm:p-8 flex-1 flex flex-col relative z-10 ${isPopular ? "pt-10" : "pt-8"}`}>
+                        <div className="mb-6">
+                          <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                          <div className="flex items-baseline gap-1 mt-4">
+                            <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-300">
+                              {formatPrice(plan.price, plan.billing_cycle).split('/')[0]}
+                            </span>
+                            <span className="text-gray-400 font-medium tracking-wide text-sm sm:text-base">
+                              /{plan.billing_cycle === "monthly" ? "mo" : "yr"}
+                            </span>
+                          </div>
+                        </div>
 
-                      <ul className="space-y-4 flex-1 mb-8">
-                        {(plan.features || []).map((feature, i) => (
-                          <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
-                            <CheckCircle className="w-5 h-5 text-cyan-400 shrink-0" />
-                            <span className="leading-relaxed">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      
-                      <Link href="/auth/signup" className={buttonVariants({ size: "lg", className: `w-full rounded-xl font-semibold ${index === 1 ? "bg-cyan-500 hover:bg-cyan-400 text-navy-900" : "bg-white/5 hover:bg-white/10 text-white border border-white/10"}` })}>
-                        Get Started
-                      </Link>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                        <div className="w-full h-px bg-white/10 my-6" />
+
+                        <ul className="space-y-4 flex-1 mb-8">
+                          {(plan.features || []).map((feature, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
+                              <CheckCircle className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                              <span className="leading-relaxed">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        <div className="mt-auto">
+                          <Link href="/auth/signup" className={buttonVariants({ size: "lg", className: `w-full rounded-xl font-bold text-sm sm:text-base py-6 transition-all ${isPopular ? "bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-navy-900 shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] border-0" : "bg-white/5 hover:bg-white/10 text-white border border-white/10"}` })}>
+                            Get Started
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           ) : (
             // Fallback static plans if DB is empty
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="grid md:grid-cols-3 gap-8">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {[
                 { name: "Starter", price: "৳2,500/mo", features: ["5 servers", "10 users", "AI analyst (100 queries/mo)", "Email alerts", "Monthly compliance report"] },
                 { name: "Professional", price: "৳7,500/mo", features: ["25 servers", "50 users", "AI analyst (unlimited)", "Priority support", "Custom compliance reports", "HRM module"], popular: true },
                 { name: "Enterprise", price: "Custom", features: ["Unlimited servers", "Unlimited users", "Dedicated AI analyst", "SLA guarantee", "On-premise option", "24/7 support"] },
               ].map((plan) => (
-                <motion.div key={plan.name} variants={fadeUpVariant} className={plan.popular ? 'md:-translate-y-4' : ''}>
-                  <Card className={`h-full relative overflow-hidden flex flex-col backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 ${plan.popular ? "bg-navy-800 border-cyan-500/50 shadow-[0_0_40px_rgba(0,212,255,0.15)]" : "bg-navy-900/40 border-white/10 hover:border-white/20"}`}>
-                    {plan.popular && <div className="absolute top-0 inset-x-0 py-1.5 bg-gradient-to-r from-cyan-500 to-purple-600 text-center text-xs font-bold text-white uppercase tracking-wider z-10">Most Popular</div>}
-                    <CardContent className={`p-8 flex-1 flex flex-col relative z-10 ${plan.popular ? "pt-12" : ""}`}>
-                      <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                      <div className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-400 mt-4">{plan.price.split('/')[0]}<span className="text-lg text-gray-500 font-medium">/{plan.price.split('/')[1] || ''}</span></div>
+                <motion.div key={plan.name} variants={fadeUpVariant} className={`h-full ${plan.popular ? 'lg:-translate-y-4' : ''}`}>
+                  <Card className={`h-full relative flex flex-col backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 rounded-2xl ${plan.popular ? "bg-navy-900 border-cyan-500/50 shadow-[0_0_30px_rgba(0,212,255,0.2)]" : "bg-navy-900/60 border-white/10 hover:border-white/20"}`}>
+
+                    {plan.popular && (
+                      <div className="absolute -top-px left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 rounded-t-2xl z-20" />
+                    )}
+
+                    {plan.popular && (
+                      <div className="absolute -top-4 inset-x-0 flex justify-center z-20">
+                        <span className="py-1 px-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-[10px] sm:text-xs font-bold text-white uppercase tracking-widest rounded-full shadow-lg border border-white/10">
+                          Most Popular
+                        </span>
+                      </div>
+                    )}
+
+                    <CardContent className={`p-6 sm:p-8 flex-1 flex flex-col relative z-10 ${plan.popular ? "pt-10" : "pt-8"}`}>
+                      <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                      <div className="flex items-baseline gap-1 mt-4">
+                        <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-300">{plan.price.split('/')[0]}</span>
+                        <span className="text-gray-400 font-medium tracking-wide text-sm sm:text-base">/{plan.price.split('/')[1] || ''}</span>
+                      </div>
+
                       <div className="w-full h-px bg-white/10 my-6" />
+
                       <ul className="space-y-4 flex-1 mb-8">
-                        {plan.features.map((f, j) => <li key={j} className="flex items-start gap-3 text-sm text-gray-300"><CheckCircle className="w-5 h-5 text-cyan-400 shrink-0" /><span className="leading-relaxed">{f}</span></li>)}
+                        {plan.features.map((f, j) => (
+                          <li key={j} className="flex items-start gap-3 text-sm text-gray-300">
+                            <CheckCircle className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                            <span className="leading-relaxed">{f}</span>
+                          </li>
+                        ))}
                       </ul>
-                      <Link href="/auth/signup" className={buttonVariants({ size: "lg", className: `w-full rounded-xl font-semibold ${plan.popular ? "bg-cyan-500 hover:bg-cyan-400 text-navy-900" : "bg-white/5 hover:bg-white/10 text-white border border-white/10"}` })}>
-                        Get Started
-                      </Link>
+
+                      <div className="mt-auto">
+                        <Link href="/auth/signup" className={buttonVariants({ size: "lg", className: `w-full rounded-xl font-bold text-sm sm:text-base py-6 transition-all ${plan.popular ? "bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-navy-900 shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] border-0" : "bg-white/5 hover:bg-white/10 text-white border border-white/10"}` })}>
+                          Get Started
+                        </Link>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>

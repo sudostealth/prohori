@@ -1,12 +1,10 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Shield, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,15 +42,16 @@ export default function AdminLoginPage() {
 
       toast.success("Welcome back, Admin!");
 
-      // Since middleware will rewrite subdomain / to /hq, we check if we're on the subdomain
+      // Force a hard navigation to the root of the current domain.
+      // The middleware handles rewriting "/" on hq.prohori.app to "/hq".
+      // By using window.location.href, we bypass Next.js client-side router caches
+      // which might incorrectly route us due to layout overlaps.
       const adminDomain = process.env.NEXT_PUBLIC_ADMIN_DOMAIN || "hq.prohori.app";
       if (typeof window !== "undefined" && (window.location.hostname === adminDomain || window.location.hostname.startsWith("hq.localhost"))) {
-        router.push(`/`);
+        window.location.href = `/`;
       } else {
-        router.push(`/${adminSegment}`);
+        window.location.href = `/${adminSegment}`;
       }
-
-      router.refresh();
     } catch (err: unknown) {
       console.error("Login error:", err);
       const message = err instanceof Error ? err.message : "Login failed";

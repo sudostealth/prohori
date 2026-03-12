@@ -138,7 +138,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden bg-[#0A0F1C]">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden bg-[#0A0F1C] pointer-events-none">
       {/* Animated Background Elements */}
       <motion.div 
         animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2], rotate: [0, 90, 0] }} 
@@ -158,7 +158,7 @@ export default function SignupPage() {
         initial={{ opacity: 0, scale: 0.95, y: 10 }} 
         animate={{ opacity: 1, scale: 1, y: 0 }} 
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-lg relative z-10 my-8"
+        className="w-full max-w-lg relative z-10 my-8 pointer-events-auto"
       >
         {/* Logo */}
         <div className="flex flex-col items-center justify-center mb-8">
