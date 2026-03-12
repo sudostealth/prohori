@@ -22,7 +22,6 @@ function LoginForm() {
   const [success, setSuccess] = useState(false);
   const [registeredMsg, setRegisteredMsg] = useState(false);
   const [confirmMsg, setConfirmMsg] = useState(false);
-  const adminSegment = process.env.NEXT_PUBLIC_ADMIN_SEGMENT || "hq";
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
@@ -51,15 +50,21 @@ function LoginForm() {
       
       setSuccess(true);
       
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "";
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "admin@prohori.app";
       setTimeout(() => {
-        if (data.user.email === adminEmail) {
-          router.push(`/${adminSegment}`);
+        if (data.user && data.user.email === adminEmail) {
+          const adminDomain = process.env.NEXT_PUBLIC_ADMIN_DOMAIN || "hq.prohori.app";
+          if (typeof window !== "undefined" && window.location.hostname !== adminDomain && !window.location.hostname.startsWith("hq.localhost")) {
+            const protocol = window.location.protocol;
+            window.location.href = `${protocol}//${adminDomain}/`;
+          } else {
+            router.push(`/`);
+          }
         } else {
           router.push("/dashboard");
         }
         router.refresh();
-      }, 1200);
+      }, 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid credentials";
       setErrorMsg(msg);
@@ -70,8 +75,13 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden bg-[#0A0F1C]">
-      {/* Animated Background Elements */}
+    <div className="min-h-screen bg-[#0A0F1C] flex items-center justify-center p-4 relative overflow-hidden font-sans">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px]" />
+      </div>
+
       <motion.div 
         animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3], rotate: [0, 90, 0] }} 
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}

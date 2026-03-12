@@ -46,12 +46,29 @@ async function hasActiveSubscription(supabaseUrl: string, supabaseKey: string, u
 }
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  const host = request.headers.get("host") || "";
+  const adminDomain = process.env.NEXT_PUBLIC_ADMIN_DOMAIN || "hq.prohori.app";
+  const isAdminDomain = host === adminDomain || host.startsWith("hq.localhost");
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const adminSegment = process.env.NEXT_PUBLIC_ADMIN_SEGMENT || "hq";
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@prohori.app";
-  const pathname = request.nextUrl.pathname;
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "admin@prohori.app";
+
+  let pathname = request.nextUrl.pathname;
+  let supabaseResponse = NextResponse.next({ request });
+
+  // ── Subdomain Rewrite ──
+  // If we are on the admin domain and the path doesn't already start with the segment, rewrite it.
+  if (isAdminDomain && !pathname.startsWith(`/${adminSegment}`)) {
+    pathname = `/${adminSegment}${pathname === "/" ? "" : pathname}`;
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    supabaseResponse = NextResponse.rewrite(url);
+  }
+
+  const adminRootPath = isAdminDomain ? "/" : `/${adminSegment}`;
+  const adminLoginPath = isAdminDomain ? "/login" : `/${adminSegment}/login`;
 
   // ── Admin login page - always allow through without redirect ──
   if (pathname === `/${adminSegment}/login` || pathname === `/${adminSegment}/login/`) {
@@ -64,12 +81,12 @@ export async function middleware(request: NextRequest) {
       });
       const { data: { user } } = await supabase.auth.getUser();
       if (user && user.email === adminEmail) {
-        return NextResponse.redirect(new URL(`/${adminSegment}`, request.url));
+        return NextResponse.redirect(new URL(adminRootPath, request.url));
       }
     } catch {
       // User not logged in or error - allow through to login page
     }
-    return NextResponse.next();
+    return supabaseResponse;
   }
 
   // ── Auth pages — allow through ──
@@ -97,12 +114,11 @@ export async function middleware(request: NextRequest) {
         getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          if (supabaseResponse.status === 200) {
-            supabaseResponse = NextResponse.next({ request });
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            );
-          }
+          // If we had a rewrite response, we should maintain its cookies instead of creating a new NextResponse.next()
+          // We can just append cookies to the existing response.
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
         },
       },
     });
@@ -113,7 +129,7 @@ export async function middleware(request: NextRequest) {
   // Admin portal protection
   if (isAdminRoute) {
     if (!user || user.email !== adminEmail) {
-      return NextResponse.redirect(new URL(`/${adminSegment}/login`, request.url));
+      return NextResponse.redirect(new URL(adminLoginPath, request.url));
     }
     return supabaseResponse;
   }

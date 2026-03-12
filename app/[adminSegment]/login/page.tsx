@@ -35,14 +35,23 @@ export default function AdminLoginPage() {
         throw new Error("No user returned");
       }
 
-      const allowedAdminEmail = process.env.ADMIN_EMAIL || "";
+      // Check NEXT_PUBLIC_ADMIN_EMAIL since this is a client component
+      const allowedAdminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "admin@prohori.app";
       if (data.user.email !== allowedAdminEmail) {
         await supabase.auth.signOut();
         throw new Error("Access denied - not an admin account");
       }
 
       toast.success("Welcome back, Admin!");
-      router.push(`/${adminSegment}`);
+
+      // Since middleware will rewrite subdomain / to /hq, we check if we're on the subdomain
+      const adminDomain = process.env.NEXT_PUBLIC_ADMIN_DOMAIN || "hq.prohori.app";
+      if (typeof window !== "undefined" && (window.location.hostname === adminDomain || window.location.hostname.startsWith("hq.localhost"))) {
+        router.push(`/`);
+      } else {
+        router.push(`/${adminSegment}`);
+      }
+
       router.refresh();
     } catch (err: unknown) {
       console.error("Login error:", err);
