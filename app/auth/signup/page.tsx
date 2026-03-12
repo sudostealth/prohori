@@ -86,41 +86,45 @@ export default function SignupPage() {
       });
       if (error) throw error;
       
-      // Check if email confirmation is required
-      if (data.user && !data.session) {
-        // Email confirmation required - show success but don't create company yet
-        setSuccess(true);
-        setTimeout(() => {
-          router.push("/auth/login?registered=true&confirm=true");
-        }, 1500);
-        return;
-      }
-      
-      if (data.user && data.session) {
-        // No email confirmation required - proceed with company creation
-        const { error: companyError } = await supabase.from("companies").insert({
-          name: form.companyName,
-          type: form.companyType,
-          owner_id: data.user.id,
-        });
-        if (companyError) throw companyError;
+      // Often with auto-confirm disabled, there is no session immediately.
+      // But we still need to create the company if possible (if RLS allows, or wait until login).
+      if (data.user) {
+        try {
+          // Attempt to create the company immediately
+          const { error: companyError } = await supabase.from("companies").insert({
+            name: form.companyName,
+            type: form.companyType,
+            owner_id: data.user.id,
+          });
 
-        // Update profile with company_id
-        const { data: company } = await supabase
-          .from("companies")
-          .select("id")
-          .eq("owner_id", data.user.id)
-          .single();
-        if (company) {
-          await supabase
-            .from("profiles")
-            .update({ company_id: company.id, display_name: form.ownerName })
-            .eq("id", data.user.id);
+          if (!companyError) {
+            // Update profile with company_id
+            const { data: company } = await supabase
+              .from("companies")
+              .select("id")
+              .eq("owner_id", data.user.id)
+              .single();
+            if (company) {
+              await supabase
+                .from("profiles")
+                .update({ company_id: company.id, display_name: form.ownerName })
+                .eq("id", data.user.id);
+            }
+          } else {
+             console.warn("Could not create company during signup:", companyError);
+          }
+        } catch (e) {
+          console.warn("Exception creating company during signup:", e);
         }
 
         setSuccess(true);
+
         setTimeout(() => {
-          router.push("/auth/login?registered=true");
+          if (!data.session) {
+             router.push("/auth/login?registered=true&confirm=true");
+          } else {
+             router.push("/auth/login?registered=true");
+          }
         }, 1500);
       }
     } catch (err: unknown) {
