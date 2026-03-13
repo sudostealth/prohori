@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/client";
 
 interface WazuhConnection {
   id: string;
@@ -35,13 +36,11 @@ export default function WazuhSettingsPage() {
     api_password: "",
   });
 
+  const supabase = createClient();
+
   const fetchConnection = async () => {
     setLoading(true);
     try {
-      const supabase = (await import("@supabase/supabase-js")).createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -88,10 +87,6 @@ export default function WazuhSettingsPage() {
 
     setSaving(true);
     try {
-      const supabase = (await import("@supabase/supabase-js")).createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -131,10 +126,6 @@ export default function WazuhSettingsPage() {
 
     setTesting(true);
     try {
-      const supabase = (await import("@supabase/supabase-js")).createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -169,10 +160,6 @@ export default function WazuhSettingsPage() {
     if (!confirm("Are you sure you want to remove this Wazuh connection?")) return;
     
     try {
-      const supabase = (await import("@supabase/supabase-js")).createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
