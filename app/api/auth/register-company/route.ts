@@ -61,18 +61,19 @@ export async function POST(req: Request) {
 
     // The profile trigger might take a moment to fire and create the row
     while (retryCount < 5 && !profileUpdated) {
-      const { error: profileError } = await adminSupabase
+      const { data: updatedProfile, error: profileError } = await adminSupabase
         .from("profiles")
         .update({
           company_id: company.id,
           display_name: ownerName,
         })
-        .eq("id", userId);
+        .eq("id", userId)
+        .select("id");
 
-      if (!profileError) {
+      if (!profileError && updatedProfile && updatedProfile.length > 0) {
         profileUpdated = true;
       } else {
-        // Wait 500ms before retrying
+        // Wait 500ms before retrying, since the row might not exist yet
         await new Promise((r) => setTimeout(r, 500));
         retryCount++;
       }
