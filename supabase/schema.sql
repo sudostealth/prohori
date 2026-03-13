@@ -488,9 +488,29 @@ CREATE INDEX IF NOT EXISTS idx_wazuh_connections_active ON wazuh_connections(is_
 -- Auto-create profile on user signup
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  new_company_id UUID;
 BEGIN
-  INSERT INTO profiles (id, display_name, role)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'display_name', 'User'), 'owner');
+  -- Check if company data was provided during signup
+  IF NEW.raw_user_meta_data->>'company_name' IS NOT NULL THEN
+    -- Create the company
+    INSERT INTO companies (name, type, owner_id)
+    VALUES (
+      NEW.raw_user_meta_data->>'company_name',
+      COALESCE(NEW.raw_user_meta_data->>'company_type', 'SME'),
+      NEW.id
+    ) RETURNING id INTO new_company_id;
+  END IF;
+
+  -- Create the profile linked to the new company
+  INSERT INTO profiles (id, display_name, role, company_id)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'display_name', 'User'),
+    'owner',
+    new_company_id
+  );
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

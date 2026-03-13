@@ -19,16 +19,6 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single();
 
-  // Fix missing company_id in profile if it exists in companies table
-  if (profile && !profile.company_id) {
-    const { data: company } = await supabase.from("companies").select("id").eq("owner_id", user.id).single();
-    if (company) {
-      await supabase.from("profiles").update({ company_id: company.id }).eq("id", user.id);
-      profile.company_id = company.id;
-      profile.companies = company;
-    }
-  }
-
   const { data: activeSub } = await supabase
     .from("active_subscriptions")
     .select("*, subscription_plans(*)")

@@ -77,63 +77,29 @@ export default function SignupPage() {
     
     setLoading(true);
     try {
+      // Pass company metadata to trigger auto-creation in Supabase
       const { data, error } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
-          data: { display_name: form.ownerName },
+          data: {
+            display_name: form.ownerName,
+            company_name: form.companyName,
+            company_type: form.companyType,
+          },
         },
       });
       if (error) throw error;
-      
-      // Often with auto-confirm disabled, there is no session immediately.
-      // But we still need to create the company if possible (if RLS allows, or wait until login).
-      if (data.user) {
-        try {
-          // Attempt to create the company immediately
-          const { data: data_company, error: companyError } = await supabase.from("companies").insert({
-            name: form.companyName,
-            type: form.companyType,
-            owner_id: data.user.id,
-          }).select('id');
 
-          if (!companyError && data_company && data_company.length > 0) {
-            const company = data_company[0];
-            // Update profile with company_id
-            let retryCount = 0;
-            let success = false;
-            // The profile trigger might take a moment to fire and create the row
-            while (retryCount < 3 && !success) {
-              const { error: profileError } = await supabase
-                 .from("profiles")
-                 .update({ company_id: company.id, display_name: form.ownerName })
-                 .eq("id", data.user.id);
+      setSuccess(true);
 
-              if (!profileError) {
-                success = true;
-              } else {
-                // Wait 500ms before retrying
-                await new Promise(r => setTimeout(r, 500));
-                retryCount++;
-              }
-            }
-          } else {
-             console.warn("Could not create company during signup:", companyError);
-          }
-        } catch (e) {
-          console.warn("Exception creating company during signup:", e);
+      setTimeout(() => {
+        if (!data.session) {
+            router.push("/auth/login?registered=true&confirm=true");
+        } else {
+            router.push("/dashboard");
         }
-
-        setSuccess(true);
-
-        setTimeout(() => {
-          if (!data.session) {
-             router.push("/auth/login?registered=true&confirm=true");
-          } else {
-             router.push("/dashboard");
-          }
-        }, 1500);
-      }
+      }, 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Signup failed";
       setGlobalError(msg);
