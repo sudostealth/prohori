@@ -153,9 +153,9 @@ function LoginForm() {
               <AnimatePresence>
                 {registeredMsg && (
                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-6 overflow-hidden">
-                      <div className="flex items-center gap-3 p-3.5 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
+                      <div className="flex items-center gap-3 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
                         <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-                        <p className="text-sm font-medium">Account created! You can now sign in.</p>
+                        <p className="text-sm font-medium">Account created! Please check your email to confirm your account before logging in.</p>
                       </div>
                    </motion.div>
                 )}

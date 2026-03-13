@@ -1,22 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import LandingClient from "@/components/landing/LandingClient";
-import type { SubscriptionPlan, PlatformContent } from "@/types";
+import type { PlatformContent } from "@/types";
 
 export const dynamic = "force-dynamic";
-
-async function getPublicPricingPlans(): Promise<SubscriptionPlan[]> {
-  try {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("subscription_plans")
-      .select("*")
-      .eq("is_published", true)
-      .order("sort_order", { ascending: true });
-    return (data as SubscriptionPlan[]) || [];
-  } catch {
-    return [];
-  }
-}
 
 async function getLandingContent(): Promise<PlatformContent[]> {
   try {
@@ -34,9 +20,6 @@ async function getLandingContent(): Promise<PlatformContent[]> {
 }
 
 export default async function HomePage() {
-  const [plans, announcements] = await Promise.all([
-    getPublicPricingPlans(),
-    getLandingContent(),
-  ]);
-  return <LandingClient plans={plans} announcements={announcements} />;
+  const announcements = await getLandingContent();
+  return <LandingClient plans={[]} announcements={announcements} />;
 }

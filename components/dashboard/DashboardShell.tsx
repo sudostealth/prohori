@@ -5,12 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield, LayoutDashboard, Brain, Users, CreditCard, Settings,
-  Bell, LogOut, Menu, X, AlertCircle, Clock, Zap
+  Bell, LogOut, Menu, Zap
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -37,7 +36,6 @@ export default function DashboardShell({
   user,
   profile,
   activeSub,
-  pendingReq,
   announcements,
   children,
 }: DashboardShellProps) {
@@ -65,10 +63,6 @@ export default function DashboardShell({
     if (exact) return pathname === href;
     return pathname.startsWith(href);
   };
-
-  const hasNoSub = !activeSub && !pendingReq;
-  const hasPending = pendingReq && (pendingReq.status as string) === "pending";
-  const hasRejected = pendingReq && (pendingReq.status as string) === "rejected";
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full overflow-hidden">
@@ -102,47 +96,6 @@ export default function DashboardShell({
             </Badge>
           )}
         </div>
-      </div>
-
-      {/* Subscription alert */}
-      <div className="flex-shrink-0">
-        {hasNoSub && (
-          <div className="mx-4 mt-4 mb-2">
-            <Alert variant="destructive" className="bg-orange-500/10 border-orange-500/20 text-orange-400 py-2.5 px-3">
-              <AlertCircle className="w-4 h-4 text-orange-400" />
-              <AlertTitle className="text-xs font-semibold mb-1">No Active Plan</AlertTitle>
-              <AlertDescription className="text-[10px] leading-tight text-orange-300/80">
-                Select a plan to unlock all functionality.
-                <Link href="/dashboard/billing" className="block mt-1 text-orange-300 hover:text-orange-200 font-medium underline underline-offset-2">
-                  View plans
-                </Link>
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
-        {hasPending && (
-          <div className="mx-4 mt-4 mb-2">
-            <Alert className="bg-cyan-500/10 border-cyan-500/20 text-cyan-400 py-2.5 px-3">
-              <Clock className="w-4 h-4 text-cyan-400" />
-              <AlertTitle className="text-xs font-semibold mb-0">Subscription Pending</AlertTitle>
-              <AlertDescription className="text-[10px] mt-0.5 text-cyan-300/80">Awaiting admin approval</AlertDescription>
-            </Alert>
-          </div>
-        )}
-        {hasRejected && (
-          <div className="mx-4 mt-4 mb-2">
-            <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-400 py-2.5 px-3">
-              <X className="w-4 h-4 text-red-400" />
-              <AlertTitle className="text-xs font-semibold mb-1">Request Rejected</AlertTitle>
-              <AlertDescription className="text-[10px] leading-tight text-red-300/80">
-                {(pendingReq?.rejection_reason as string) || "Contact support"}
-                <Link href="/dashboard/billing" className="block mt-1 text-red-300 hover:text-red-200 font-medium underline underline-offset-2">
-                  Try again
-                </Link>
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
       </div>
 
       {/* Nav */}

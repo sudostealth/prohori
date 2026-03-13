@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Shield, CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +27,6 @@ const PASSWORD_CHECKS: PasswordCheck[] = [
 
 export default function SignupPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [form, setForm] = useState({
     ownerName: "",
@@ -98,24 +96,9 @@ export default function SignupPage() {
         throw new Error(data.error || "Failed to register company and user");
       }
 
-      // 2. Automatically log the user in after successful registration
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
-      });
-
-      if (signInError) {
-        console.warn("Sign in error after registration:", signInError.message);
-        setSuccess(true);
-        setTimeout(() => {
-           router.push("/auth/login?registered=true");
-        }, 1500);
-        return;
-      }
-
       setSuccess(true);
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/auth/login?registered=true");
       }, 1500);
 
     } catch (err: unknown) {

@@ -3,48 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-async function hasActiveSubscription(supabaseUrl: string, supabaseKey: string, userId: string): Promise<boolean> {
-  try {
-    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/check_subscription`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ user_id: userId }),
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      return data === true;
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    const { data: company } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('owner_id', userId)
-      .single();
-    
-    if (!company) return false;
-    
-    const { data: subscription } = await supabase
-      .from('active_subscriptions')
-      .select('expires_at')
-      .eq('company_id', company.id)
-      .eq('status', 'active')
-      .gte('expires_at', new Date().toISOString())
-      .single();
-    
-    return !!subscription;
-  } catch {
-    return false;
-  }
-}
-
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const adminDomain = process.env.NEXT_PUBLIC_ADMIN_DOMAIN || "hq.prohori.app";
@@ -90,12 +48,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Auth pages — allow through ──
-  if (pathname.startsWith("/auth/")) {
-    return supabaseResponse;
-  }
-
-  // ── Billing page and API — allow through (no subscription check) ──
-  if (pathname === "/dashboard/billing" || pathname.startsWith("/api/")) {
+  if (pathname.startsWith("/auth/") || pathname.startsWith("/api/")) {
     return supabaseResponse;
   }
 
@@ -138,29 +91,6 @@ export async function middleware(request: NextRequest) {
   if (isDashboardRoute) {
     if (!user) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
-    }
-    
-    // Check subscription status for non-admin users
-    // Skip for the owner account initially to allow signup flow
-    const { data: profile } = await createServerClient(supabaseUrl, supabaseKey, {
-      cookies: {
-        getAll() { return request.cookies.getAll(); },
-        setAll() {},
-      },
-    }).from('profiles').select('is_admin').eq('id', user.id).single();
-    
-    // Allow admin users to access without subscription
-    if (profile?.is_admin) {
-      return supabaseResponse;
-    }
-    
-    // Check subscription for regular users
-    const hasSubscription = await hasActiveSubscription(supabaseUrl, supabaseKey, user.id);
-    
-    if (!hasSubscription) {
-      // Redirect to billing if no active subscription
-      const billingUrl = new URL("/dashboard/billing", request.url);
-      return NextResponse.redirect(billingUrl);
     }
     
     return supabaseResponse;

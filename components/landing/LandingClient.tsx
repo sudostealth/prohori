@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useTransform, type Variants } from "framer-motion";
 import { 
-  Shield, Activity, Brain, Users, CreditCard, CheckCircle, 
+  Shield, Activity, Brain, Users, CheckCircle,
   ArrowRight, Zap, Lock, Globe, ChevronRight, Star, Menu, X
 } from "lucide-react";
 import type { SubscriptionPlan, PlatformContent } from "@/types";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface LandingClientProps {
-  plans: SubscriptionPlan[];
+  plans?: SubscriptionPlan[];
   announcements: PlatformContent[];
 }
 
@@ -50,14 +50,6 @@ const FEATURES = [
     iconColor: "text-orange-400",
   },
   {
-    icon: CreditCard,
-    title: "Local Billing (bKash/Nagad)",
-    desc: "Pay easily via bKash, Nagad, or bank transfer. Flexible monthly and yearly plans designed for Bangladeshi SMEs.",
-    color: "from-pink-500/20 to-pink-600/5",
-    border: "border-pink-500/20",
-    iconColor: "text-pink-400",
-  },
-  {
     icon: Globe,
     title: "Zero-Trust Architecture",
     desc: "Hybrid cloud design with Google Cloud VM + Supabase. Every access is verified; no implicit trust anywhere in your network.",
@@ -84,7 +76,7 @@ const staggerContainer: Variants = {
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
-export default function LandingClient({ plans, announcements }: LandingClientProps) {
+export default function LandingClient({ announcements }: LandingClientProps) {
   const [navOpen, setNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeBanner, setActiveBanner] = useState<PlatformContent | null>(null);
@@ -165,11 +157,6 @@ export default function LandingClient({ plans, announcements }: LandingClientPro
     return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", handleResize); };
   }, []);
 
-  const formatPrice = (price: number, cycle: string) => {
-    if (price === 0) return "Free";
-    return `৳${price.toLocaleString()}/${cycle === "monthly" ? "mo" : "yr"}`;
-  };
-
   return (
     <div className="min-h-screen relative overflow-hidden bg-navy-900 selection:bg-cyan-500/30">
       {/* Particle bg */}
@@ -218,7 +205,7 @@ export default function LandingClient({ plans, announcements }: LandingClientPro
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-            {["Features", "Pricing", "Docs", "Blog"].map((item) => (
+            {["Features", "Docs", "Blog"].map((item) => (
               <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-cyan-400 transition-colors relative group">
                 {item}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
@@ -248,7 +235,7 @@ export default function LandingClient({ plans, announcements }: LandingClientPro
               exit={{ height: 0, opacity: 0 }}
               className="md:hidden overflow-hidden glass-card mx-4 mb-4 p-4 space-y-3"
             >
-              {["Features", "Pricing", "Docs"].map((item) => (
+              {["Features", "Docs"].map((item) => (
                 <a key={item} href={`#${item.toLowerCase()}`} className="block text-gray-300 hover:text-cyan-400 hover:bg-white/5 px-3 py-2 rounded-md transition-colors font-medium" onClick={() => setNavOpen(false)}>
                   {item}
                 </a>
@@ -374,135 +361,6 @@ export default function LandingClient({ plans, announcements }: LandingClientPro
               </motion.div>
             ))}
           </motion.div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="relative z-10 py-32 px-6 bg-navy-950/50 border-y border-white/5">
-        <div className="max-w-6xl mx-auto">
-          <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUpVariant}
-            className="text-center mb-20"
-          >
-            <Badge variant="outline" className="mb-4 border-purple-500/30 bg-purple-500/10 text-purple-300">Flexible Pricing</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
-              Simple, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-500">transparent</span> pricing
-            </h2>
-            <p className="text-gray-400 text-lg md:text-xl font-light">
-              Start free, scale as you grow. No hidden fees. Local payment gateways supported.
-            </p>
-          </motion.div>
-
-          {plans.length > 0 ? (
-            <motion.div 
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch"
-            >
-              {plans.map((plan, index) => {
-                const isPopular = index === 1; // Or read from plan.is_popular if available
-                return (
-                  <motion.div key={plan.id} variants={fadeUpVariant} className={`h-full ${isPopular ? 'lg:-translate-y-4' : ''}`}>
-                    <Card className={`h-full relative flex flex-col backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 rounded-2xl ${isPopular ? "bg-navy-900 border-cyan-500/50 shadow-[0_0_30px_rgba(0,212,255,0.2)]" : "bg-navy-900/60 border-white/10 hover:border-white/20"}`}>
-
-                      {isPopular && (
-                        <div className="absolute -top-px left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 rounded-t-2xl z-20" />
-                      )}
-
-                      {isPopular && (
-                        <div className="absolute -top-4 inset-x-0 flex justify-center z-20">
-                          <span className="py-1 px-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-[10px] sm:text-xs font-bold text-white uppercase tracking-widest rounded-full shadow-lg border border-white/10">
-                            Most Popular
-                          </span>
-                        </div>
-                      )}
-                      
-                      <CardContent className={`p-6 sm:p-8 flex-1 flex flex-col relative z-10 ${isPopular ? "pt-10" : "pt-8"}`}>
-                        <div className="mb-6">
-                          <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                          <div className="flex items-baseline gap-1 mt-4">
-                            <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-300">
-                              {formatPrice(plan.price, plan.billing_cycle).split('/')[0]}
-                            </span>
-                            <span className="text-gray-400 font-medium tracking-wide text-sm sm:text-base">
-                              /{plan.billing_cycle === "monthly" ? "mo" : "yr"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="w-full h-px bg-white/10 my-6" />
-
-                        <ul className="space-y-4 flex-1 mb-8">
-                          {(plan.features || []).map((feature, i) => (
-                            <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
-                              <CheckCircle className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                              <span className="leading-relaxed">{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-
-                        <div className="mt-auto">
-                          <Link href="/auth/signup" className={buttonVariants({ size: "lg", className: `w-full rounded-xl font-bold text-sm sm:text-base py-6 transition-all ${isPopular ? "bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-navy-900 shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] border-0" : "bg-white/5 hover:bg-white/10 text-white border border-white/10"}` })}>
-                            Get Started
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          ) : (
-            // Fallback static plans if DB is empty
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-              {[
-                { name: "Starter", price: "৳2,500/mo", features: ["5 servers", "10 users", "AI analyst (100 queries/mo)", "Email alerts", "Monthly compliance report"] },
-                { name: "Professional", price: "৳7,500/mo", features: ["25 servers", "50 users", "AI analyst (unlimited)", "Priority support", "Custom compliance reports", "HRM module"], popular: true },
-                { name: "Enterprise", price: "Custom", features: ["Unlimited servers", "Unlimited users", "Dedicated AI analyst", "SLA guarantee", "On-premise option", "24/7 support"] },
-              ].map((plan) => (
-                <motion.div key={plan.name} variants={fadeUpVariant} className={`h-full ${plan.popular ? 'lg:-translate-y-4' : ''}`}>
-                  <Card className={`h-full relative flex flex-col backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 rounded-2xl ${plan.popular ? "bg-navy-900 border-cyan-500/50 shadow-[0_0_30px_rgba(0,212,255,0.2)]" : "bg-navy-900/60 border-white/10 hover:border-white/20"}`}>
-
-                    {plan.popular && (
-                      <div className="absolute -top-px left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 rounded-t-2xl z-20" />
-                    )}
-
-                    {plan.popular && (
-                      <div className="absolute -top-4 inset-x-0 flex justify-center z-20">
-                        <span className="py-1 px-4 bg-gradient-to-r from-cyan-500 to-purple-600 text-[10px] sm:text-xs font-bold text-white uppercase tracking-widest rounded-full shadow-lg border border-white/10">
-                          Most Popular
-                        </span>
-                      </div>
-                    )}
-
-                    <CardContent className={`p-6 sm:p-8 flex-1 flex flex-col relative z-10 ${plan.popular ? "pt-10" : "pt-8"}`}>
-                      <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                      <div className="flex items-baseline gap-1 mt-4">
-                        <span className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-300">{plan.price.split('/')[0]}</span>
-                        <span className="text-gray-400 font-medium tracking-wide text-sm sm:text-base">/{plan.price.split('/')[1] || ''}</span>
-                      </div>
-
-                      <div className="w-full h-px bg-white/10 my-6" />
-
-                      <ul className="space-y-4 flex-1 mb-8">
-                        {plan.features.map((f, j) => (
-                          <li key={j} className="flex items-start gap-3 text-sm text-gray-300">
-                            <CheckCircle className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                            <span className="leading-relaxed">{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      <div className="mt-auto">
-                        <Link href="/auth/signup" className={buttonVariants({ size: "lg", className: `w-full rounded-xl font-bold text-sm sm:text-base py-6 transition-all ${plan.popular ? "bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-navy-900 shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] border-0" : "bg-white/5 hover:bg-white/10 text-white border border-white/10"}` })}>
-                          Get Started
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
         </div>
       </section>
 

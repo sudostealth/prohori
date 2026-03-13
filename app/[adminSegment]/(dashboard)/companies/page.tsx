@@ -23,15 +23,12 @@ export default async function AdminCompaniesPage({ params }: { params: { adminSe
       id,
       name,
       type,
+        status,
       max_endpoints,
       endpoints_count,
       compliance_score,
       created_at,
-      profiles (display_name, email),
-      active_subscriptions (
-        expires_at,
-        subscription_plans (name)
-      )
+        profiles (display_name, email)
     `)
     .order("created_at", { ascending: false });
 
@@ -57,15 +54,12 @@ export default async function AdminCompaniesPage({ params }: { params: { adminSe
                   <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Industry</th>
                   <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Endpoints</th>
                   <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">CSA Score</th>
-                  <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Active Plan</th>
                   <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {companies?.map((company) => {
                   const owner = ((company.profiles as Record<string, unknown>[])?.[0]) as { display_name?: string; email?: string } || {};
-                  const sub = ((company.active_subscriptions as Record<string, unknown>[])?.[0]) as { subscription_plans?: { name?: string } } | null;
-                  const planName = sub?.subscription_plans?.name || "None";
                   
                   return (
                     <tr key={company.id} className="hover:bg-white/5 transition-colors group">
@@ -92,11 +86,8 @@ export default async function AdminCompaniesPage({ params }: { params: { adminSe
                            <span className="text-xs font-bold text-gray-300">{company.compliance_score || 0}%</span>
                         </div>
                       </td>
-                      <td className="p-4 text-sm text-gray-300 font-medium">
-                        {planName}
-                      </td>
                       <td className="p-4">
-                        {sub ? (
+                        {company.status === "active" ? (
                           <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 font-bold">
                             <Activity className="w-3 h-3 mr-1" /> Active
                           </Badge>
