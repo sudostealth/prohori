@@ -3,7 +3,7 @@ import { useState } from "react";
 import { 
   Activity, AlertTriangle, Server, Download, RefreshCw,
   Cpu, CheckCircle2, XCircle, AlertCircle,
-  Copy, Check, Terminal, ChevronDown, ChevronUp
+  Check, Terminal, ChevronDown, ChevronUp
 } from "lucide-react";
 import type { SecurityAlert, ServerMetric } from "@/types";
 
@@ -23,33 +23,44 @@ const SEVERITY_CONFIG = {
   info:     { color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20", dot: "bg-blue-500", label: "INFO" },
 };
 
+import Link from "next/link";
+
 const CONNECTION_STEPS = [
   {
-    title: "Linux / Ubuntu Server",
-    commands: [
-      "curl -sO https://packages.wazuh.com/4.x/wazuh-install.sh",
-      "sudo bash wazuh-install.sh --wazuh-agent",
-      "sudo WAZUH_MANAGER='YOUR_PROHORI_SERVER_IP' WAZUH_AGENT_NAME='$(hostname)' /var/ossec/bin/wazuh-control start",
+    title: "Step 1: Get Wazuh Credentials",
+    description: "First, you need the API credentials from your Wazuh server to allow Prohori to connect.",
+    instructions: [
+      "1. Log in to your Wazuh web interface.",
+      "2. Navigate to Settings (the gear icon) > API.",
+      "3. Click 'Add new API' or view an existing one.",
+      "4. Note down the API URL (usually https://your-server:55000).",
+      "5. Note down the API Username and Password.",
     ],
+    actionText: "Got my credentials",
   },
   {
-    title: "Docker Container",
-    commands: [
-      "docker pull prohori/agent:latest",
-      "docker run -d --name prohori-agent \\",
-      "  -e PROHORI_SERVER='YOUR_SERVER_IP' \\",
-      "  -e PROHORI_KEY='YOUR_API_KEY' \\",
-      "  --restart unless-stopped prohori/agent:latest",
+    title: "Step 2: Connect via Settings",
+    description: "Now enter these credentials into your Prohori portal.",
+    instructions: [
+      "1. Click the button below to go to Settings > Wazuh Connection.",
+      "2. Enter a name for your connection (e.g., 'Main Server').",
+      "3. Paste your API URL, Username, and Password.",
+      "4. Click 'Save Connection' and ensure it shows 'Connected'.",
     ],
+    actionLink: "/dashboard/settings/wazuh",
+    actionText: "Go to Settings",
   },
   {
-    title: "Windows Server",
-    commands: [
-      "# Download agent installer",
-      "Invoke-WebRequest -Uri 'https://prohori.app/agent/windows' -OutFile 'prohori-agent.msi'",
-      "# Install with your server details",
-      "msiexec.exe /i prohori-agent.msi SERVER='YOUR_SERVER_IP' KEY='YOUR_API_KEY' /quiet",
+    title: "Step 3: Deploy Endpoint Agents",
+    description: "Once connected, you can deploy agents to monitor your servers.",
+    instructions: [
+      "1. Navigate to 'Endpoints' from the left sidebar.",
+      "2. Click 'Deploy New Agent'.",
+      "3. Enter a name for the server and select its OS.",
+      "4. Copy the generated script and run it on your server's terminal.",
     ],
+    actionLink: "/dashboard/endpoints",
+    actionText: "Go to Endpoints",
   },
 ];
 
@@ -80,38 +91,20 @@ function GaugeCircle({ value, label, color }: { value: number; label: string; co
   );
 }
 
-function CopyableCommand({ cmd }: { cmd: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(cmd);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <div className="flex items-start gap-2 group">
-      <code className="flex-1 text-green-400 font-mono text-xs break-all">{cmd}</code>
-      <button
-        onClick={copy}
-        className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center bg-white/5 hover:bg-cyan-500/20 hover:text-cyan-400 text-gray-600 transition-all opacity-0 group-hover:opacity-100"
-      >
-        {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-      </button>
-    </div>
-  );
-}
-
 function OnboardingPanel() {
   const [activeStep, setActiveStep] = useState(0);
 
   return (
-    <div className="glass-card p-8 border-cyan-500/20">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-600/20 border border-cyan-500/30 flex items-center justify-center">
-          <Terminal className="w-6 h-6 text-cyan-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-white">Connect Your Server</h2>
-          <p className="text-gray-400 text-sm">Follow the steps below to start monitoring your infrastructure</p>
+    <div className="glass-card p-8 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border-b border-white/5 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.3)] shrink-0">
+            <Server className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">Connect Your Server</h2>
+            <p className="text-gray-400 text-sm mt-1">Connect your Wazuh server to Prohori to start monitoring your infrastructure.</p>
+          </div>
         </div>
       </div>
 
@@ -119,71 +112,92 @@ function OnboardingPanel() {
       <div className="flex items-center gap-2 mb-8">
         {[1, 2, 3].map((step, i) => (
           <div key={step} className="flex items-center gap-2 flex-1">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i <= activeStep ? "bg-cyan-500 text-white" : "bg-white/5 text-gray-500"}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all shadow-md ${i <= activeStep ? "bg-cyan-500 text-navy-900 shadow-cyan-500/30" : "bg-white/5 text-gray-500 border border-white/10"}`}>
               {i < activeStep ? <CheckCircle2 className="w-4 h-4" /> : step}
             </div>
-            {i < 2 && <div className={`h-px flex-1 transition-all ${i < activeStep ? "bg-cyan-500" : "bg-white/5"}`} />}
+            {i < 2 && <div className={`h-1 rounded-full flex-1 transition-all ${i < activeStep ? "bg-cyan-500 shadow-[0_0_10px_rgba(0,212,255,0.3)]" : "bg-white/5"}`} />}
           </div>
         ))}
       </div>
 
-      {/* Server type selector */}
-      <div className="space-y-3 mb-6">
+      {/* Steps Content */}
+      <div className="space-y-4 mb-8">
         {CONNECTION_STEPS.map((step, i) => (
-          <div key={step.title} className={`rounded-xl border overflow-hidden transition-all ${i === activeStep ? "border-cyan-500/40 bg-cyan-500/5" : "border-white/5 bg-white/2 cursor-pointer hover:border-white/10"}`}>
+          <div key={step.title} className={`rounded-2xl border overflow-hidden transition-all duration-300 ${i === activeStep ? "border-cyan-500/40 bg-navy-900/80 shadow-[0_0_20px_rgba(0,212,255,0.05)]" : "border-white/5 bg-black/20 opacity-70 hover:opacity-100 hover:border-white/20"}`}>
             <button
               onClick={() => setActiveStep(i)}
-              className="w-full flex items-center justify-between p-4"
+              className="w-full flex items-center justify-between p-5 text-left"
             >
-              <div className="flex items-center gap-3">
-                <Server className={`w-4 h-4 ${i === activeStep ? "text-cyan-400" : "text-gray-600"}`} />
-                <span className={`font-medium text-sm ${i === activeStep ? "text-white" : "text-gray-500"}`}>
-                  {step.title}
-                </span>
+              <div className="flex items-center gap-4">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${i === activeStep ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-500"}`}>
+                  <span className="font-bold text-sm">{i + 1}</span>
+                </div>
+                <div>
+                  <h3 className={`font-bold text-base ${i === activeStep ? "text-white" : "text-gray-400"}`}>
+                    {step.title}
+                  </h3>
+                  {i !== activeStep && <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px] sm:max-w-md">{step.description}</p>}
+                </div>
               </div>
               {i === activeStep ? (
-                <ChevronUp className="w-4 h-4 text-cyan-400" />
+                <ChevronUp className="w-5 h-5 text-cyan-400" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-gray-600" />
+                <ChevronDown className="w-5 h-5 text-gray-600" />
               )}
             </button>
+
             {i === activeStep && (
-              <div className="terminal mx-4 mb-4">
-                <div className="terminal-header">
-                  <div className="terminal-dot bg-red-500" />
-                  <div className="terminal-dot bg-yellow-500" />
-                  <div className="terminal-dot bg-green-500" />
-                  <span className="text-gray-500 text-xs ml-2">terminal</span>
-                </div>
-                <div className="terminal-body space-y-1.5">
-                  {step.commands.map((cmd, j) => (
-                    <CopyableCommand key={j} cmd={cmd} />
+              <div className="px-5 pb-6 pt-2 pl-[4.5rem]">
+                <p className="text-sm text-gray-300 mb-4">{step.description}</p>
+
+                <div className="bg-black/40 rounded-xl p-5 border border-white/5 mb-5 space-y-3">
+                  {step.instructions.map((inst, j) => (
+                    <div key={j} className="text-sm text-gray-300 flex items-start gap-2">
+                       <span className="text-cyan-400 mt-0.5">•</span>
+                       <span>{inst.replace(/^\d+\.\s*/, '')}</span>
+                    </div>
                   ))}
                 </div>
+
+                {step.actionLink ? (
+                  <Link href={step.actionLink} className="inline-flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-navy-900 font-bold px-6 py-2.5 rounded-lg transition-all shadow-[0_0_15px_rgba(0,212,255,0.3)]">
+                    {step.actionText}
+                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => setActiveStep(prev => Math.min(prev + 1, 2))}
+                    className="inline-flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-navy-900 font-bold px-6 py-2.5 rounded-lg transition-all shadow-[0_0_15px_rgba(0,212,255,0.3)]"
+                  >
+                    {step.actionText}
+                    <Check className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-        <AlertCircle className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-        <div>
-          <p className="text-sm font-medium text-purple-300 mb-1">First-time setup</p>
-          <p className="text-xs text-purple-400/80">
-            After installing the agent, allow 2–5 minutes for initial data to appear in your dashboard.
-            Your unique API key is available in Settings → Security Keys.
-          </p>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+          <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-blue-300 mb-1">Why connect Wazuh?</p>
+            <p className="text-xs text-blue-400/80 leading-relaxed">
+              Prohori connects to your existing Wazuh manager to fetch alerts, metrics, and manage agents directly from this portal. You maintain full ownership of your data.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-start gap-3 p-4 mt-4 rounded-xl bg-red-500/10 border border-red-500/20">
-        <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-        <div>
-          <p className="text-sm font-medium text-red-300 mb-1">Not seeing any data?</p>
-          <p className="text-xs text-red-400/80">
-            If your server is not connecting, ensure that the Prohori API key and server IP are correct. Check that port 1514 (Wazuh Agent) and 1515 (Wazuh Enrollment) are open on your server&apos;s firewall. Also verify that the agent service is actively running.
-          </p>
+        <div className="flex-1 flex items-start gap-3 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+          <Terminal className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-purple-300 mb-1">Need help?</p>
+            <p className="text-xs text-purple-400/80 leading-relaxed">
+              Ensure ports 1514 and 1515 are open on your Wazuh manager. If you need assistance, use our AI Analyst to ask questions about configuration and troubleshooting.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -228,7 +242,7 @@ export default function DashboardMain({
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Security Dashboard</h1>
           <p className="text-gray-500 text-sm mt-1">
@@ -236,13 +250,13 @@ export default function DashboardMain({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="btn-secondary py-2 px-4 text-sm flex items-center gap-2">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          <button className="btn-secondary flex-1 sm:flex-none justify-center py-2 px-4 text-sm flex items-center gap-2">
+            <RefreshCw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Refresh</span>
           </button>
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="btn-primary py-2 px-4 text-sm flex items-center gap-2 disabled:opacity-50"
+            className="btn-primary flex-1 sm:flex-none justify-center py-2 px-4 text-sm flex items-center gap-2 disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
             <span>{downloading ? "Generating..." : "Download Report"}</span>

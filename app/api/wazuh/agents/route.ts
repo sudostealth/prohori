@@ -6,9 +6,6 @@ import { getWazuhConnection } from "@/lib/wazuh/connection";
 
 export const dynamic = 'force-dynamic';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 function simpleDecrypt(encrypted: string): string {
   const key = (process.env.WAZUH_ENCRYPTION_KEY || 'prohori-default-encryption-key-change-me').slice(0, 32).padEnd(32, '0');
   const decoded = Buffer.from(encrypted, 'base64').toString('binary');
@@ -21,6 +18,8 @@ function simpleDecrypt(encrypted: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const authHeader = request.headers.get("authorization");
@@ -153,6 +152,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const authHeader = request.headers.get("authorization");

@@ -96,7 +96,7 @@ export default function HRMClient({ companyId, members, auditLogs, currentUserRo
 
       {/* Members table */}
       {activeTab === "members" && (
-        <div className="glass-card overflow-hidden">
+        <div className="glass-card overflow-hidden overflow-x-auto">
           {members.length === 0 ? (
             <div className="text-center py-16 text-gray-600">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
@@ -104,7 +104,7 @@ export default function HRMClient({ companyId, members, auditLogs, currentUserRo
               <p className="text-sm mt-1">Add your first team member to get started</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-black/40 border-b border-white/5">
                   <th className="p-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Member</th>
@@ -158,14 +158,14 @@ export default function HRMClient({ companyId, members, auditLogs, currentUserRo
 
       {/* Audit Logs */}
       {activeTab === "logs" && (
-        <div className="glass-card overflow-hidden">
+        <div className="glass-card overflow-hidden overflow-x-auto">
           {auditLogs.length === 0 ? (
             <div className="text-center py-16 text-gray-600">
               <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="font-medium">No access logs yet</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-black/40 border-b border-white/5">
                   <th className="p-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Action</th>

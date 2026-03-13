@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createClient } from "@/lib/supabase/client";
 
 interface Agent {
   id: string;
@@ -35,15 +36,13 @@ export default function EndpointsPage() {
   const [needsConnection, setNeedsConnection] = useState(false);
   const [connectionError, setConnectionError] = useState("");
 
+  const supabase = createClient();
+
   const fetchAgents = async () => {
     setLoading(true);
     setNeedsConnection(false);
     setConnectionError("");
     try {
-      const supabase = (await import("@supabase/supabase-js")).createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) return;
@@ -72,6 +71,7 @@ export default function EndpointsPage() {
 
   useEffect(() => {
     fetchAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDeploy = async () => {
@@ -82,10 +82,6 @@ export default function EndpointsPage() {
     
     setSubmitting(true);
     try {
-      const supabase = (await import("@supabase/supabase-js")).createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -179,6 +175,29 @@ export default function EndpointsPage() {
             </Button>
           </div>
         )}
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-cyan-500/5 border-cyan-500/20 p-5 flex gap-4">
+            <Activity className="w-6 h-6 text-cyan-400 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-bold text-cyan-300 mb-1">What are Endpoint Agents?</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Endpoint agents are lightweight services installed on your servers. They continuously monitor system activity, analyzing logs, detecting file integrity changes, and assessing configuration weaknesses.
+              </p>
+            </div>
+          </Card>
+          <Card className="bg-purple-500/5 border-purple-500/20 p-5 flex gap-4">
+            <ShieldOff className="w-6 h-6 text-purple-400 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-bold text-purple-300 mb-1">Why deploy them?</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Deploying agents allows Prohori to catch real-time threats like rootkits, brute-force attacks, and malware. Without an agent, your server remains invisible to the security dashboard.
+              </p>
+            </div>
+          </Card>
+        </div>
       </motion.div>
 
       {/* Needs Connection Warning */}
