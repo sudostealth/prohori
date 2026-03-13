@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { WazuhClient } from "@/lib/wazuh/client";
-import { getCompanySubscription } from "@/lib/wazuh/queries";
 import { getWazuhConnection } from "@/lib/wazuh/connection";
 
 export const dynamic = 'force-dynamic';
@@ -52,28 +51,11 @@ export async function POST(request: NextRequest) {
         message: "Please configure your Wazuh connection in settings first"
       }, { status: 403 });
     }
-
-    const subscription = await getCompanySubscription(company.id);
-    if (!subscription) {
-      return NextResponse.json({ error: "No active subscription" }, { status: 403 });
-    }
-
-    const limits = subscription.plan?.limits || {};
-    const serverLimit = limits.max_servers || 0;
     
     const { data: existingAgents } = await supabase
       .from('wazuh_agents')
       .select('*')
       .eq('company_id', company.id);
-    
-    const activeAgents = (existingAgents || []).filter(a => a.status === 'active');
-    
-    if (serverLimit > 0 && activeAgents.length >= serverLimit) {
-      return NextResponse.json({ 
-        error: "Server limit reached",
-        message: `Your plan allows maximum ${serverLimit} servers. Upgrade to add more.` 
-      }, { status: 403 });
-    }
 
     const { agentName, osType } = await request.json();
     

@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { WazuhClient } from "@/lib/wazuh/client";
-import { getCompanySubscription } from "@/lib/wazuh/queries";
 import { getWazuhConnection } from "@/lib/wazuh/connection";
 
 export const dynamic = 'force-dynamic';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 function simpleDecrypt(encrypted: string): string {
   const key = (process.env.WAZUH_ENCRYPTION_KEY || 'prohori-default-encryption-key-change-me').slice(0, 32).padEnd(32, '0');
@@ -21,6 +17,8 @@ function simpleDecrypt(encrypted: string): string {
 
 export async function GET(request: NextRequest) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const authHeader = request.headers.get("authorization");
@@ -44,11 +42,6 @@ export async function GET(request: NextRequest) {
 
     if (!company) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
-    }
-
-    const subscription = await getCompanySubscription(company.id);
-    if (!subscription) {
-      return NextResponse.json({ error: "No active subscription" }, { status: 403 });
     }
 
     const wazuhConnection = await getWazuhConnection(company.id);
