@@ -170,7 +170,7 @@ export default function SignupPage() {
                     <CheckCircle2 className="w-10 h-10 text-green-400" />
                   </motion.div>
                   <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-3xl font-bold text-white mb-2 tracking-tight">Account Created!</motion.h2>
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-gray-400 text-sm mb-6 max-w-[250px]">Please check your email to verify your newly created account.</motion.p>
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-gray-400 text-sm mb-6 max-w-[250px]">Your account has been successfully created.</motion.p>
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex items-center gap-2 text-cyan-400 text-sm font-medium">
                     <Loader2 className="w-4 h-4 animate-spin" /> Redirecting to login...
                   </motion.div>

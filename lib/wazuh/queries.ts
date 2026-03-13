@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Lazily initialize Supabase client inside functions when needed,
+// to avoid build-time errors where process.env is not fully populated.
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 export interface WazuhAgentDB {
   id?: number;
@@ -49,6 +52,7 @@ export interface UsageTrackingDB {
 }
 
 export async function registerWazuhAgent(agent: Omit<WazuhAgentDB, 'id' | 'created_at'>): Promise<WazuhAgentDB | null> {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('wazuh_agents')
     .upsert(agent, { onConflict: 'company_id,agent_name' })
@@ -63,6 +67,7 @@ export async function registerWazuhAgent(agent: Omit<WazuhAgentDB, 'id' | 'creat
 }
 
 export async function getCompanyAgents(companyId: string): Promise<WazuhAgentDB[]> {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('wazuh_agents')
     .select('*')
@@ -77,6 +82,7 @@ export async function getCompanyAgents(companyId: string): Promise<WazuhAgentDB[
 }
 
 export async function updateAgentStatus(agentId: number, status: 'pending' | 'active' | 'disconnected' | 'removed'): Promise<boolean> {
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from('wazuh_agents')
     .update({ 
@@ -95,6 +101,7 @@ export async function updateAgentStatus(agentId: number, status: 'pending' | 'ac
 export async function saveWazuhAlerts(alerts: Omit<WazuhAlertDB, 'id' | 'synced_at'>[]): Promise<boolean> {
   if (alerts.length === 0) return true;
 
+  const supabase = getSupabaseClient();
   const { error } = await supabase
     .from('wazuh_alerts')
     .upsert(alerts, { onConflict: 'company_id,wazuh_alert_id' });
@@ -111,6 +118,7 @@ export async function getCompanyAlerts(
   limit: number = 100,
   severity?: number
 ): Promise<WazuhAlertDB[]> {
+  const supabase = getSupabaseClient();
   let query = supabase
     .from('wazuh_alerts')
     .select('*')
@@ -136,6 +144,7 @@ export async function trackUsage(
   usageType: UsageTrackingDB['usage_type'],
   increment: number = 1
 ): Promise<boolean> {
+  const supabase = getSupabaseClient();
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
@@ -179,6 +188,7 @@ export async function getUsage(
   companyId: string,
   usageType: UsageTrackingDB['usage_type']
 ): Promise<number> {
+  const supabase = getSupabaseClient();
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
@@ -210,6 +220,7 @@ export async function checkLimit(
 }
 
 export async function getCompanySubscription(companyId: string) {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('active_subscriptions')
     .select(`
@@ -228,5 +239,3 @@ export async function hasActiveSubscription(companyId: string): Promise<boolean>
   const subscription = await getCompanySubscription(companyId);
   return subscription !== null;
 }
-
-export { supabase };

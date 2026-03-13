@@ -4,14 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Shield, LayoutDashboard, Brain, Users, CreditCard, Settings,
+  Shield, LayoutDashboard, Brain, Users, Settings,
   Bell, LogOut, Menu, Zap
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 
 interface DashboardShellProps {
   user: User;
@@ -28,13 +27,13 @@ const NAV_ITEMS = [
   { href: "/dashboard/compliance", label: "Compliance", icon: Shield },
   { href: "/dashboard/endpoints", label: "Endpoints", icon: LayoutDashboard },
   { href: "/dashboard/hrm", label: "HRM & Access", icon: Users },
-  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export default function DashboardShell({
   user,
   profile,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   activeSub,
   announcements,
   children,
@@ -90,11 +89,6 @@ export default function DashboardShell({
             <p className="text-sm font-medium text-white truncate">{companyName}</p>
             <p className="text-xs text-gray-500 truncate">{displayName}</p>
           </div>
-          {activeSub && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-green-500/30 bg-green-500/10 text-green-400">
-              {(activeSub.subscription_plans as Record<string, unknown>)?.name as string}
-            </Badge>
-          )}
         </div>
       </div>
 

@@ -372,15 +372,37 @@ export default function WazuhSettingsPage() {
 
       {/* Help Card */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <Card className="bg-navy-900/20 border-white/5 p-6">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">How to get Wazuh API credentials</h3>
-          <ol className="text-sm text-gray-500 space-y-2 list-decimal list-inside">
-            <li>Log in to your Wazuh dashboard</li>
-            <li>Go to <span className="text-gray-400">Settings → API</span></li>
-            <li>Click <span className="text-gray-400">Add new API</span></li>
-            <li>Fill in the details and note the API username and password</li>
-            <li>Ensure the API is enabled and reachable</li>
-          </ol>
+        <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20 p-6">
+          <h3 className="text-sm font-bold text-blue-300 mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-blue-400" />
+            How to find your Wazuh API credentials
+          </h3>
+          <div className="space-y-4 text-sm text-gray-300">
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">1</div>
+              <p>Log in to your <strong>Wazuh dashboard</strong> using an administrator account.</p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">2</div>
+              <p>In the top menu, go to <strong>Settings</strong> (gear icon), then click on <strong>API</strong>.</p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">3</div>
+              <p>Click on the <strong>Add new API</strong> button or select an existing one.</p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">4</div>
+              <p>Note down the <strong>API URL</strong>. It usually looks like <code>https://your-server-ip:55000</code>. Make sure to include the port if your setup uses one.</p>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">5</div>
+              <p>Enter the <strong>API Username</strong> and <strong>API Password</strong> associated with this connection.</p>
+            </div>
+            <div className="mt-4 p-3 bg-black/30 rounded-lg border border-white/5 text-xs text-gray-400 flex gap-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+              <p>Important: Ensure your Prohori portal can reach the Wazuh API URL over the network (e.g., port 55000 is open in your firewall rules).</p>
+            </div>
+          </div>
         </Card>
       </motion.div>
     </div>

@@ -30,6 +30,8 @@ export default function AIAnalystPage() {
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState<"en" | "bn">("en");
   const [langOpen, setLangOpen] = useState(false);
+  const [model, setModel] = useState<"groq" | "gemini" | "openrouter" | "huggingface">("groq");
+  const [modelOpen, setModelOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -50,7 +52,7 @@ export default function AIAnalystPage() {
       const res = await fetch("/api/explain-alert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: content, language }),
+        body: JSON.stringify({ question: content, language, provider: model }),
       });
       const data = await res.json();
       const aiMsg: Message = {
@@ -91,29 +93,62 @@ export default function AIAnalystPage() {
           </div>
         </div>
 
-        {/* Language selector */}
-        <div className="relative">
-          <button
-            onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/8 text-sm text-gray-300 hover:border-white/15 transition-all"
-          >
-            <Globe className="w-3.5 h-3.5 text-cyan-400" />
-            {language === "en" ? "English" : "বাংলা"}
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-          {langOpen && (
-            <div className="absolute right-0 top-full mt-1 glass-card py-1 w-32 z-10">
-              {[{ value: "en", label: "English" }, { value: "bn", label: "বাংলা" }].map((l) => (
-                <button
-                  key={l.value}
-                  onClick={() => { setLanguage(l.value as "en" | "bn"); setLangOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm transition-all ${language === l.value ? "text-cyan-400 bg-cyan-500/10" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          {/* Model selector */}
+          <div className="relative">
+            <button
+              onClick={() => { setModelOpen(!modelOpen); setLangOpen(false); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/8 text-sm text-gray-300 hover:border-white/15 transition-all"
+            >
+              <Brain className="w-3.5 h-3.5 text-purple-400" />
+              {model === "groq" ? "Groq (Fast)" : model === "gemini" ? "Gemini (Smart)" : model === "openrouter" ? "OpenRouter" : "HuggingFace"}
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            {modelOpen && (
+              <div className="absolute right-0 top-full mt-1 glass-card py-1 w-56 z-20">
+                {[
+                  { value: "groq", label: "Groq (Llama 3)", desc: "Fastest response, good for general security questions." },
+                  { value: "gemini", label: "Google Gemini", desc: "Best for complex reasoning and log analysis." },
+                  { value: "openrouter", label: "OpenRouter (Gemma)", desc: "Good balance of speed and open-source intelligence." },
+                  { value: "huggingface", label: "HuggingFace (Qwen)", desc: "Excellent for code and script-related issues." }
+                ].map((m) => (
+                  <button
+                    key={m.value}
+                    onClick={() => { setModel(m.value as "groq" | "gemini" | "openrouter" | "huggingface"); setModelOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-all block ${model === m.value ? "text-purple-400 bg-purple-500/10" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                  >
+                    <div className="font-bold">{m.label}</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">{m.desc}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Language selector */}
+          <div className="relative">
+            <button
+              onClick={() => { setLangOpen(!langOpen); setModelOpen(false); }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/8 text-sm text-gray-300 hover:border-white/15 transition-all"
+            >
+              <Globe className="w-3.5 h-3.5 text-cyan-400" />
+              {language === "en" ? "English" : "বাংলা"}
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            {langOpen && (
+              <div className="absolute right-0 top-full mt-1 glass-card py-1 w-32 z-20">
+                {[{ value: "en", label: "English" }, { value: "bn", label: "বাংলা" }].map((l) => (
+                  <button
+                    key={l.value}
+                    onClick={() => { setLanguage(l.value as "en" | "bn"); setLangOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-all ${language === l.value ? "text-cyan-400 bg-cyan-500/10" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
