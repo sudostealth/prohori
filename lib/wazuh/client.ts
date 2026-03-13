@@ -134,14 +134,23 @@ export class WazuhClient {
   private async request<T = unknown>(endpoint: string, options: NodeFetchRequestInit = {}): Promise<T> {
     const token = await this.authenticate();
     
-    const response = await fetch(`${this.credentials.api_url}${endpoint}`, this.getFetchOptions({
+    // Convert body to string if it's an object, as node-fetch requires a string body
+    let finalBody = options.body;
+    if (finalBody && typeof finalBody !== 'string') {
+        finalBody = JSON.stringify(finalBody);
+    }
+
+    const fetchOptions = this.getFetchOptions({
       ...options,
+      body: finalBody,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
         ...(options.headers || {}),
       },
-    }));
+    });
+
+    const response = await fetch(`${this.credentials.api_url}${endpoint}`, fetchOptions);
 
     if (!response.ok) {
       let errorDetail = response.statusText;
@@ -243,21 +252,36 @@ export class WazuhClient {
 
   async getAgentKey(agentName: string): Promise<{ key: string | null; error?: string }> {
     try {
-      // The Wazuh API parameters for creating an agent might differ slightly between versions.
-      // Removing force_time to maximize compatibility since we just want a simple agent addition.
-      const data = await this.request<{ data?: { affected_items?: Array<{ key?: string }> } }>('/agents', {
+      // Wazuh 4.x /agents POST requires query parameters for some deployments or JSON body for others.
+      // A common requirement is `name` and `ip` in the body or query.
+      // We will supply it via the JSON body, explicitly restoring `ip: "any"` which is standard.
+      const data = await this.request<{ data?: { affected_items?: Array<{ key?: string }> }; message?: string; error?: number }>('/agents', {
         method: 'POST',
         body: JSON.stringify({
           name: agentName,
-          // 'any' allows the agent to connect from any IP. If 'any' is rejected, '0.0.0.0' or omit if default.
+          ip: 'any'
         }),
       });
       
       if (data.data?.affected_items && data.data.affected_items.length > 0 && data.data.affected_items[0].key) {
         return { key: data.data.affected_items[0].key };
       }
+
+      // If we got a 200 OK but it was an error format like { error: 1, message: 'Agent already exists' }
+      if (data.error && data.error !== 0) {
+         if (data.message && data.message.toLowerCase().includes('already exists')) {
+             // Fallback: agent might already exist
+            const agents = await this.getAgents();
+            const existingAgent = agents.find(a => a.name === agentName);
+            if (existingAgent) {
+              const keyData = await this.request<{ data?: string }>(`/agents/${existingAgent.id}/key`);
+              return { key: keyData.data || null };
+            }
+         }
+         return { key: null, error: data.message || "Wazuh API returned an error" };
+      }
       
-      // Fallback: agent might already exist
+      // Another Fallback: search for it anyway just in case
       const agents = await this.getAgents();
       const existingAgent = agents.find(a => a.name === agentName);
       if (existingAgent) {
@@ -268,6 +292,18 @@ export class WazuhClient {
       return { key: null, error: "Failed to parse key from Wazuh response" };
     } catch (error) {
       console.error('Error getting Wazuh agent key:', error);
+      // Attempt fallback lookup on failure in case it actually succeeded but threw a timeout/parse error
+      try {
+          const agents = await this.getAgents();
+          const existingAgent = agents.find(a => a.name === agentName);
+          if (existingAgent) {
+            const keyData = await this.request<{ data?: string }>(`/agents/${existingAgent.id}/key`);
+            if (keyData.data) return { key: keyData.data };
+          }
+      } catch (fallbackError) {
+          console.error("Fallback lookup also failed", fallbackError);
+      }
+
       return { key: null, error: error instanceof Error ? error.message : "Unknown error connecting to Wazuh API" };
     }
   }
