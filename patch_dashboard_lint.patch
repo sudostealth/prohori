@@ -1,0 +1,11 @@
+--- components/dashboard/DashboardMain.tsx
++++ components/dashboard/DashboardMain.tsx
+@@ -182,7 +182,7 @@
+         <div>
+           <p className="text-sm font-medium text-red-300 mb-1">Not seeing any data?</p>
+           <p className="text-xs text-red-400/80">
+-            If your server is not connecting, ensure that the Prohori API key and server IP are correct. Check that port 1514 (Wazuh Agent) and 1515 (Wazuh Enrollment) are open on your server's firewall. Also verify that the agent service is actively running.
++            If your server is not connecting, ensure that the Prohori API key and server IP are correct. Check that port 1514 (Wazuh Agent) and 1515 (Wazuh Enrollment) are open on your server&apos;s firewall. Also verify that the agent service is actively running.
+           </p>
+         </div>
+       </div>
