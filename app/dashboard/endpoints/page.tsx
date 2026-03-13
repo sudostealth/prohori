@@ -109,10 +109,10 @@ export default function EndpointsPage() {
           setNeedsConnection(true);
           setConnectionError(data.message || "Please configure your Wazuh connection first");
         }
-        toast.error(data.error || "Failed to register agent");
+        toast.error(data.message || data.error || "Failed to register agent");
       }
-    } catch {
-      toast.error("Failed to register agent");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to register agent");
     } finally {
       setSubmitting(false);
     }
