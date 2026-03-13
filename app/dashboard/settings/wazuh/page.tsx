@@ -388,7 +388,16 @@ export default function WazuhSettingsPage() {
             </div>
             <div className="mt-4 p-3 bg-black/30 rounded-lg border border-white/5 text-xs text-gray-400 flex gap-2">
               <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
-              <p>Important: Ensure your Prohori portal can reach the Wazuh API URL over the network (e.g., port 55000 is open in your firewall rules).</p>
+              <div className="space-y-2">
+                <p><strong>Connection Timeout Error?</strong></p>
+                <p>If you experience a timeout or connection failure, your server&apos;s firewall (or cloud provider Security Group/Firewall like AWS, GCP, Azure) is likely blocking incoming connections.</p>
+                <p>You <strong>must open the following ports</strong> on your VM for Prohori to communicate with it:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li><strong>Port 55000 (TCP)</strong>: For the Wazuh API connection to Prohori.</li>
+                  <li><strong>Port 1514 (TCP/UDP)</strong>: For Wazuh Agent communication.</li>
+                  <li><strong>Port 1515 (TCP)</strong>: For new Wazuh Agent enrollment.</li>
+                </ul>
+              </div>
             </div>
           </div>
         </Card>
