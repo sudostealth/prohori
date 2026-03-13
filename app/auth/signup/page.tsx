@@ -77,63 +77,47 @@ export default function SignupPage() {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // 1. Securely register the user and company on the server
+      const res = await fetch("/api/auth/register-company", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          companyName: form.companyName,
+          companyType: form.companyType,
+          ownerName: form.ownerName,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to register company and user");
+      }
+
+      // 2. Automatically log the user in after successful registration
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.password,
-        options: {
-          data: { display_name: form.ownerName },
-        },
       });
-      if (error) throw error;
-      
-      // Often with auto-confirm disabled, there is no session immediately.
-      // But we still need to create the company if possible (if RLS allows, or wait until login).
-      if (data.user) {
-        try {
-          // Attempt to create the company immediately
-          const { data: data_company, error: companyError } = await supabase.from("companies").insert({
-            name: form.companyName,
-            type: form.companyType,
-            owner_id: data.user.id,
-          }).select('id');
 
-          if (!companyError && data_company && data_company.length > 0) {
-            const company = data_company[0];
-            // Update profile with company_id
-            let retryCount = 0;
-            let success = false;
-            // The profile trigger might take a moment to fire and create the row
-            while (retryCount < 3 && !success) {
-              const { error: profileError } = await supabase
-                 .from("profiles")
-                 .update({ company_id: company.id, display_name: form.ownerName })
-                 .eq("id", data.user.id);
-
-              if (!profileError) {
-                success = true;
-              } else {
-                // Wait 500ms before retrying
-                await new Promise(r => setTimeout(r, 500));
-                retryCount++;
-              }
-            }
-          } else {
-             console.warn("Could not create company during signup:", companyError);
-          }
-        } catch (e) {
-          console.warn("Exception creating company during signup:", e);
-        }
-
+      if (signInError) {
+        console.warn("Sign in error after registration:", signInError.message);
         setSuccess(true);
-
         setTimeout(() => {
-          if (!data.session) {
-             router.push("/auth/login?registered=true&confirm=true");
-          } else {
-             router.push("/dashboard");
-          }
+           router.push("/auth/login?registered=true");
         }, 1500);
+        return;
       }
+
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1500);
+
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Signup failed";
       setGlobalError(msg);
