@@ -77,6 +77,7 @@ export default function WazuhSettingsPage() {
 
   useEffect(() => {
     fetchConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSaveConnection = async () => {

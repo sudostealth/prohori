@@ -72,7 +72,8 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
 
     if (!company) return NextResponse.json({ error: "Company not found" }, { status: 404 });
 
-    const { name, api_url, api_username, api_password } = await request.json();
+    const body = await request.json();
+    const { name, api_url, api_username, api_password, _testOnly } = body;
 
     if (!api_url || !api_username || !api_password) {
       return NextResponse.json({ 
@@ -85,18 +86,20 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
     const testResult = await testClient.testConnection();
 
     if (!testResult.success) {
-      await supabase
-        .from("wazuh_connections")
-        .upsert({
-          company_id: company.id,
-          name: name || 'My Wazuh',
-          api_url,
-          api_username,
-          api_password_encrypted: encrypt(api_password),
-          is_active: true,
-          connection_status: 'error',
-          last_error: testResult.error,
-        }, { onConflict: 'company_id' });
+      if (!_testOnly) {
+        await supabase
+          .from("wazuh_connections")
+          .upsert({
+            company_id: company.id,
+            name: name || 'My Wazuh',
+            api_url,
+            api_username,
+            api_password_encrypted: encrypt(api_password),
+            is_active: true,
+            connection_status: 'error',
+            last_error: testResult.error,
+          }, { onConflict: 'company_id' });
+      }
 
       await logAdminAction({
         action: AUDIT_ACTIONS.WAZUH_CONNECTION_TESTED,
@@ -114,19 +117,26 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
       }, { status: 400 });
     }
 
+    if (_testOnly) {
+      return NextResponse.json({
+        success: true,
+        message: "Connection successful!",
+      });
+    }
+
     const { data: connection, error: upsertError } = await supabase
       .from("wazuh_connections")
       .upsert({
         company_id: company.id,
-          name: name || 'My Wazuh',
-          api_url,
-          api_username,
-          api_password_encrypted: encrypt(api_password),
-          is_active: true,
-          connection_status: 'connected',
-          last_connected: new Date().toISOString(),
-          last_error: null,
-        }, { onConflict: 'company_id' })
+        name: name || 'My Wazuh',
+        api_url,
+        api_username,
+        api_password_encrypted: encrypt(api_password),
+        is_active: true,
+        connection_status: 'connected',
+        last_connected: new Date().toISOString(),
+        last_error: null,
+      }, { onConflict: 'company_id' })
       .select()
       .single();
 

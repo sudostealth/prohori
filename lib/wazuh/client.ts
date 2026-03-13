@@ -1,3 +1,6 @@
+import fetch, { RequestInit as NodeFetchRequestInit } from "node-fetch";
+import https from "https";
+
 interface WazuhCredentials {
   api_url: string;
   api_username: string;
@@ -44,10 +47,6 @@ interface WazuhAlert {
   severity: number;
 }
 
-interface WazuhAuthResponse {
-  token: string;
-}
-
 interface WazuhStats {
   totalAgents: number;
   activeAgents: number;
@@ -64,6 +63,20 @@ export class WazuhClient {
     this.credentials = credentials;
   }
 
+  private getFetchOptions(options: NodeFetchRequestInit = {}): NodeFetchRequestInit {
+    // Wazuh typically uses self-signed certificates.
+    // By creating an https.Agent with rejectUnauthorized: false,
+    // we instruct node-fetch to ignore SSL certificate validation errors.
+    const agent = new https.Agent({
+      rejectUnauthorized: false
+    });
+
+    return {
+      ...options,
+      agent,
+    };
+  }
+
   private async authenticate(): Promise<string> {
     if (this.token && Date.now() < this.tokenExpiry) {
       return this.token;
@@ -71,44 +84,70 @@ export class WazuhClient {
 
     const url = `${this.credentials.api_url}/security/user/authenticate`;
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: this.credentials.api_username,
-        password: this.credentials.api_password,
-      }),
-    });
+    // Wazuh /security/user/authenticate expects Basic Auth or body params depending on version.
+    // The standard way is Basic Auth.
+    const authHeader = 'Basic ' + Buffer.from(`${this.credentials.api_username}:${this.credentials.api_password}`).toString('base64');
 
-    if (!response.ok) {
-      throw new Error(`Wazuh authentication failed: ${response.statusText}`);
+    try {
+      const response = await fetch(url, this.getFetchOptions({
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+        },
+      }));
+
+      if (!response.ok) {
+        let errorMsg = response.statusText;
+        try {
+          const errData = await response.json() as { message?: string };
+          errorMsg = errData.message || errorMsg;
+        } catch {
+          // ignore
+        }
+        throw new Error(`Wazuh authentication failed: ${response.status} ${errorMsg}`);
+      }
+
+      const data = await response.json() as { data?: { token?: string }, token?: string };
+
+      // Wazuh returns data wrapped in { data: { token: "..." } } usually
+      if (data && data.data && data.data.token) {
+        this.token = data.data.token;
+      } else if (data && data.token) {
+        this.token = data.token;
+      } else {
+        throw new Error("Invalid token response from Wazuh");
+      }
+
+      this.tokenExpiry = Date.now() + 12 * 60 * 60 * 1000;
+      return this.token as string;
+    } catch (error) {
+      if (error instanceof Error) {
+         if (error.message.includes('fetch failed') || error.message.includes('unable to verify') || error.message.includes('ECONNREFUSED')) {
+             throw new Error(`Wazuh connection failed: ${error.message}. Please check if the URL and port are accessible.`);
+         }
+      }
+      throw error;
     }
-
-    const data: WazuhAuthResponse = await response.json();
-    this.token = data.token;
-    this.tokenExpiry = Date.now() + 12 * 60 * 60 * 1000;
-    return this.token;
   }
 
-  private async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T = unknown>(endpoint: string, options: NodeFetchRequestInit = {}): Promise<T> {
     const token = await this.authenticate();
     
-    const response = await fetch(`${this.credentials.api_url}${endpoint}`, {
+    const response = await fetch(`${this.credentials.api_url}${endpoint}`, this.getFetchOptions({
       ...options,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        ...options.headers,
+        ...(options.headers || {}),
       },
-    });
+    }));
 
     if (!response.ok) {
       throw new Error(`Wazuh API error: ${response.statusText}`);
     }
 
-    return response.json() as T;
+    return await response.json() as T;
   }
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
