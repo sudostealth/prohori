@@ -1,0 +1,14 @@
+--- app/[adminSegment]/(dashboard)/companies/page.tsx
++++ app/[adminSegment]/(dashboard)/companies/page.tsx
+@@ -15,8 +15,10 @@
+     return redirect(`/${params.adminSegment}/login`);
+   }
+
++  const adminSupabase = createAdminClient();
++
+   // Fetch all companies and their active plans
+-  const { data: companies } = await supabase
++  const { data: companies } = await adminSupabase
+     .from("companies")
+     .select(`
+       id,

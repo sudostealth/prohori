@@ -1,0 +1,11 @@
+--- app/dashboard/layout.tsx
++++ app/dashboard/layout.tsx
+@@ -10,7 +10,7 @@
+   if (!user) redirect("/auth/login");
+
+   // Fetch profile + company + subscription
+-  let { data: profile } = await supabase
++  const { data: profile } = await supabase
+     .from("profiles")
+     .select("*, companies(*)")
+     .eq("id", user.id)
