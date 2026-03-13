@@ -70,16 +70,18 @@ export async function POST(request: NextRequest) {
     };
 
     const client = new WazuhClient(credentials);
-    const companyAgentName = `${company.name}-${agentName}`;
+    const companyAgentName = `${company.name.replace(/[^a-zA-Z0-9]/g, '')}-${agentName.replace(/[^a-zA-Z0-9]/g, '')}`.substring(0, 128); // Wazuh agent names have strict character limits
 
-    const agentKey = await client.getAgentKey(companyAgentName);
+    const result = await client.getAgentKey(companyAgentName);
 
-    if (!agentKey) {
+    if (!result.key) {
       return NextResponse.json({ 
         error: "Failed to generate agent key",
-        message: "Could not register agent with Wazuh server. Check your connection settings." 
+        message: result.error || "Could not register agent with Wazuh server. Check your connection settings."
       }, { status: 500 });
     }
+
+    const agentKey = result.key;
 
     const existingAgent = (existingAgents || []).find(a => a.agent_name === companyAgentName);
 
@@ -126,7 +128,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error registering agent:", error);
     return NextResponse.json(
-      { error: "Failed to register agent" },
+      { error: "Failed to register agent", message: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

@@ -144,7 +144,14 @@ export class WazuhClient {
     }));
 
     if (!response.ok) {
-      throw new Error(`Wazuh API error: ${response.statusText}`);
+      let errorDetail = response.statusText;
+      try {
+        const errData = await response.json() as { message?: string, detail?: string };
+        errorDetail = errData.detail || errData.message || errorDetail;
+      } catch {
+        // Ignore JSON parsing errors
+      }
+      throw new Error(`Wazuh API error: ${response.status} ${errorDetail}`);
     }
 
     return await response.json() as T;
@@ -234,32 +241,34 @@ export class WazuhClient {
     }
   }
 
-  async getAgentKey(agentName: string): Promise<string | null> {
+  async getAgentKey(agentName: string): Promise<{ key: string | null; error?: string }> {
     try {
-      const data = await this.request<{ data: { affected_items?: Array<{ key?: string }> } }>('/agents', {
+      // The Wazuh API parameters for creating an agent might differ slightly between versions.
+      // Removing force_time to maximize compatibility since we just want a simple agent addition.
+      const data = await this.request<{ data?: { affected_items?: Array<{ key?: string }> } }>('/agents', {
         method: 'POST',
         body: JSON.stringify({
           name: agentName,
-          ip: 'any',
-          force_time: 3600,
+          // 'any' allows the agent to connect from any IP. If 'any' is rejected, '0.0.0.0' or omit if default.
         }),
       });
       
-      if (data.data?.affected_items?.[0]?.key) {
-        return data.data.affected_items[0].key;
+      if (data.data?.affected_items && data.data.affected_items.length > 0 && data.data.affected_items[0].key) {
+        return { key: data.data.affected_items[0].key };
       }
       
+      // Fallback: agent might already exist
       const agents = await this.getAgents();
       const existingAgent = agents.find(a => a.name === agentName);
       if (existingAgent) {
-        const keyData = await this.request<{ data: string }>(`/agents/${existingAgent.id}/key`);
-        return keyData.data || null;
+        const keyData = await this.request<{ data?: string }>(`/agents/${existingAgent.id}/key`);
+        return { key: keyData.data || null };
       }
       
-      return null;
+      return { key: null, error: "Failed to parse key from Wazuh response" };
     } catch (error) {
       console.error('Error getting Wazuh agent key:', error);
-      return null;
+      return { key: null, error: error instanceof Error ? error.message : "Unknown error connecting to Wazuh API" };
     }
   }
 
