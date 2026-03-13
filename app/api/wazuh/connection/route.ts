@@ -85,20 +85,30 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
     const testClient = new WazuhClient({ api_url, api_username, api_password });
     const testResult = await testClient.testConnection();
 
+    const { data: existingConnection } = await supabase
+      .from("wazuh_connections")
+      .select("id")
+      .eq("company_id", company.id)
+      .maybeSingle();
+
     if (!testResult.success) {
       if (!_testOnly) {
-        await supabase
-          .from("wazuh_connections")
-          .upsert({
-            company_id: company.id,
-            name: name || 'My Wazuh',
-            api_url,
-            api_username,
-            api_password_encrypted: encrypt(api_password),
-            is_active: true,
-            connection_status: 'error',
-            last_error: testResult.error,
-          }, { onConflict: 'company_id' });
+        const errorPayload = {
+          company_id: company.id,
+          name: name || 'My Wazuh',
+          api_url,
+          api_username,
+          api_password_encrypted: encrypt(api_password),
+          is_active: true,
+          connection_status: 'error',
+          last_error: testResult.error,
+        };
+
+        if (existingConnection) {
+          await supabase.from("wazuh_connections").update(errorPayload).eq("id", existingConnection.id);
+        } else {
+          await supabase.from("wazuh_connections").insert(errorPayload);
+        }
       }
 
       await logAdminAction({
@@ -124,23 +134,41 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    const { data: connection, error: upsertError } = await supabase
-      .from("wazuh_connections")
-      .upsert({
-        company_id: company.id,
-        name: name || 'My Wazuh',
-        api_url,
-        api_username,
-        api_password_encrypted: encrypt(api_password),
-        is_active: true,
-        connection_status: 'connected',
-        last_connected: new Date().toISOString(),
-        last_error: null,
-      }, { onConflict: 'company_id' })
-      .select()
-      .single();
+    const successPayload = {
+      company_id: company.id,
+      name: name || 'My Wazuh',
+      api_url,
+      api_username,
+      api_password_encrypted: encrypt(api_password),
+      is_active: true,
+      connection_status: 'connected',
+      last_connected: new Date().toISOString(),
+      last_error: null,
+    };
 
-    if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 });
+    let connection;
+    let upsertError;
+
+    if (existingConnection) {
+      const { data, error } = await supabase
+        .from("wazuh_connections")
+        .update(successPayload)
+        .eq("id", existingConnection.id)
+        .select()
+        .single();
+      connection = data;
+      upsertError = error;
+    } else {
+      const { data, error } = await supabase
+        .from("wazuh_connections")
+        .insert(successPayload)
+        .select()
+        .single();
+      connection = data;
+      upsertError = error;
+    }
+
+    if (upsertError || !connection) return NextResponse.json({ error: upsertError?.message || "Database error" }, { status: 500 });
 
     await logAdminAction({
       action: AUDIT_ACTIONS.WAZUH_CONNECTION_CREATED,
