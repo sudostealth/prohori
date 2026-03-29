@@ -171,9 +171,19 @@ export class WazuhClient {
       await this.authenticate();
       return { success: true };
     } catch (error) {
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+         if (error.message.includes('fetch failed') && error.message.includes('ECONNREFUSED')) {
+             errorMessage = 'Connection refused. Ensure the Wazuh server is running and port 55000 is open in its firewall/security groups.';
+         } else if (error.message.includes('fetch failed') && error.message.includes('ETIMEDOUT')) {
+             errorMessage = 'Connection timed out. The server IP might be wrong, or a firewall is blocking port 55000.';
+         } else {
+             errorMessage = error.message;
+         }
+      }
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: errorMessage
       };
     }
   }

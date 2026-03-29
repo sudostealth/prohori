@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { Users, Plus, ShieldCheck, Activity, Mail, X, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
 interface HRMClientProps {
@@ -29,25 +28,38 @@ const ROLE_COLORS: Record<string, string> = {
 export default function HRMClient({ companyId, members, auditLogs, currentUserRole }: HRMClientProps) {
   const [activeTab, setActiveTab] = useState<"members" | "logs">("members");
   const [showInvite, setShowInvite] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ name: "", email: "", role: "user" });
+  const [inviteForm, setInviteForm] = useState({ name: "", email: "", password: "", role: "user" });
   const [inviting, setInviting] = useState(false);
-  const supabase = createClient();
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteForm.name || !inviteForm.email) return;
+    if (!inviteForm.name || !inviteForm.email || !inviteForm.password) return;
+    if (inviteForm.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
     setInviting(true);
     try {
-      const { error } = await supabase.from("hrm_members").insert({
-        company_id: companyId,
-        name: inviteForm.name,
-        email: inviteForm.email,
-        role: inviteForm.role,
+      const res = await fetch("/api/hrm/member", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          companyId,
+          name: inviteForm.name,
+          email: inviteForm.email,
+          password: inviteForm.password,
+          role: inviteForm.role,
+        }),
       });
-      if (error) throw error;
-      toast.success(`${inviteForm.name} added to your team!`);
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add member");
+
+      toast.success(`${inviteForm.name} added to your team! They can now log in.`);
       setShowInvite(false);
-      setInviteForm({ name: "", email: "", role: "user" });
+      setInviteForm({ name: "", email: "", password: "", role: "user" });
       window.location.reload();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to add member");
@@ -233,6 +245,21 @@ export default function HRMClient({ companyId, members, auditLogs, currentUserRo
                   onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5 flex items-center gap-2">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Login Password
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Set a temporary password"
+                  value={inviteForm.password}
+                  onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })}
+                  required
+                  autoComplete="off"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">They will use this password to log in.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1.5">Role & Permissions</label>
