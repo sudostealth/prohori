@@ -167,15 +167,18 @@ function LoginForm() {
 
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Company Email</label>
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Company / Team Email</label>
+                  </div>
                   <input 
                     type="email" 
                     className="w-full h-12 bg-black/20 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all placeholder-gray-600 block" 
-                    placeholder="owner@yourcompany.com" 
+                    placeholder="name@yourcompany.com"
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
                     autoComplete="email" 
                   />
+                  <p className="text-[10px] text-gray-500 mt-1 ml-1">Team members: Log in using your assigned email and password.</p>
                 </div>
 
                 <div className="space-y-2">

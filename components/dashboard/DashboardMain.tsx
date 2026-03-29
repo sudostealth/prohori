@@ -91,8 +91,11 @@ function GaugeCircle({ value, label, color }: { value: number; label: string; co
   );
 }
 
-function OnboardingPanel() {
-  const [activeStep, setActiveStep] = useState(0);
+function OnboardingPanel({ serverConnected, agentsDeployed }: { serverConnected: boolean; agentsDeployed: boolean }) {
+  // If not connected, start at Step 1 (index 0).
+  // If connected but no agents, jump to Step 3 (index 2).
+  const initialStep = serverConnected && !agentsDeployed ? 2 : 0;
+  const [activeStep, setActiveStep] = useState(initialStep);
 
   return (
     <div className="glass-card p-8 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5">
@@ -214,6 +217,8 @@ export default function DashboardMain({
 }: DashboardMainProps) {
   const [downloading, setDownloading] = useState(false);
 
+  const agentsDeployed = metrics.length > 0;
+
   const avgCpu = metrics.length ? metrics.reduce((s, m) => s + m.cpu_percent, 0) / metrics.length : 0;
   const avgMem = metrics.length ? metrics.reduce((s, m) => s + m.memory_percent, 0) / metrics.length : 0;
   const avgDisk = metrics.length ? metrics.reduce((s, m) => s + m.disk_percent, 0) / metrics.length : 0;
@@ -264,8 +269,25 @@ export default function DashboardMain({
         </div>
       </div>
 
-      {/* Show onboarding if not connected */}
-      {!serverConnected && <OnboardingPanel />}
+      {/* Show full onboarding if not connected or no agents are deployed */}
+      {(!serverConnected || !agentsDeployed) ? (
+        <OnboardingPanel serverConnected={serverConnected} agentsDeployed={agentsDeployed} />
+      ) : (
+        <div className="glass-card p-4 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Wazuh Server Connected</p>
+              <p className="text-xs text-green-400">Monitoring {metrics.length} agents actively</p>
+            </div>
+          </div>
+          <Link href="/dashboard/settings/wazuh" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
+            <Server className="w-3.5 h-3.5" /> Configure
+          </Link>
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
