@@ -277,3 +277,14 @@ export type SubscriptionPlanUpdate = Partial<
   Pick<SubscriptionPlan, 'name' | 'price' | 'billing_cycle' | 'features' | 'limits' | 'is_published' | 'sort_order'>
 >;
 
+
+export interface CompanyUploadedLog {
+  id: string;
+  company_id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  row_count: number;
+  summary: string;
+  created_at: string;
+}
