@@ -9,18 +9,6 @@ export type PaymentMethod = "bkash" | "nagad" | "offline" | "card" | "bank";
 
 // ── Specific sub-interfaces replacing generic Record<string, unknown> ─────────
 
-/** Typed permissions map for HRM members */
-export interface HrmPermissions {
-  view_alerts?: boolean;
-  manage_alerts?: boolean;
-  view_reports?: boolean;
-  manage_endpoints?: boolean;
-  view_members?: boolean;
-  manage_members?: boolean;
-  view_billing?: boolean;
-  [key: string]: boolean | undefined;
-}
-
 /** Tracks how much of each plan limit a company has consumed */
 export interface LimitsUsed {
   servers?: number;
@@ -139,19 +127,6 @@ export interface PlatformContent {
   priority: number;
   created_at: string;
   updated_at: string;
-}
-
-export interface HrmMember {
-  id: string;
-  company_id: string;
-  user_id: string | null;
-  name: string;
-  email: string;
-  role: Exclude<UserRole, "owner">;
-  permissions: HrmPermissions;
-  is_active: boolean;
-  created_by: string;
-  created_at: string;
 }
 
 export interface AuditLog {
@@ -300,12 +275,5 @@ export type SubscriptionPlanInsert = Pick<
 
 export type SubscriptionPlanUpdate = Partial<
   Pick<SubscriptionPlan, 'name' | 'price' | 'billing_cycle' | 'features' | 'limits' | 'is_published' | 'sort_order'>
->;
-
-export type HrmMemberInsert = Pick<HrmMember, 'company_id' | 'name' | 'email' | 'role' | 'created_by'> &
-  Partial<Pick<HrmMember, 'user_id' | 'permissions' | 'is_active'>>;
-
-export type HrmMemberUpdate = Partial<
-  Pick<HrmMember, 'name' | 'email' | 'role' | 'permissions' | 'is_active'>
 >;
 

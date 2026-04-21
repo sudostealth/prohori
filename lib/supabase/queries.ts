@@ -11,7 +11,6 @@ import type {
   // ActiveSubscription, // reserved for future use
   CouponCode,
   PlatformContent,
-  HrmMember,
   AuditLog,
   SecurityAlert,
   ServerMetric,
@@ -449,66 +448,6 @@ export const contentQueries = {
       .from('platform_content')
       .delete()
       .eq('id', id);
-  },
-};
-
-// =============================================================================
-// HRM MEMBER QUERIES
-// =============================================================================
-
-export const hrmQueries = {
-  async getByCompanyId(companyId: string) {
-    const supabase = createSupabaseClient();
-    return supabase
-      .from('hrm_members')
-      .select('*')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false });
-  },
-
-  async getById(id: string) {
-    const supabase = createSupabaseClient();
-    return supabase
-      .from('hrm_members')
-      .select('*')
-      .eq('id', id)
-      .single();
-  },
-
-  async create(data: Partial<HrmMember>) {
-    const supabase = createSupabaseClient();
-    return supabase
-      .from('hrm_members')
-      .insert(data)
-      .select()
-      .single();
-  },
-
-  async update(id: string, data: Partial<HrmMember>) {
-    const supabase = createSupabaseClient();
-    return supabase
-      .from('hrm_members')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
-  },
-
-  async delete(id: string) {
-    const supabase = createSupabaseClient();
-    return supabase
-      .from('hrm_members')
-      .delete()
-      .eq('id', id);
-  },
-
-  async setInactive(id: string) {
-    const supabase = createSupabaseClient();
-    return supabase
-      .from('hrm_members')
-      .update({ is_active: false })
-      .eq('id', id)
-      .select();
   },
 };
 

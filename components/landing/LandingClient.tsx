@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useTransform, type Variants } from "framer-motion";
 import { 
-  Shield, Activity, Brain, Users, CheckCircle,
+  Shield, Activity, Brain, CheckCircle,
   ArrowRight, Zap, Lock, Globe, ChevronRight, Star, Menu, X
 } from "lucide-react";
 import type { SubscriptionPlan, PlatformContent } from "@/types";
@@ -40,14 +40,6 @@ const FEATURES = [
     color: "from-green-500/20 to-green-600/5",
     border: "border-green-500/20",
     iconColor: "text-green-400",
-  },
-  {
-    icon: Users,
-    title: "HRM & Access Control",
-    desc: "Role-based access management (Owner → Viewer). Add team members, define granular permissions, and maintain audit trails automatically.",
-    color: "from-orange-500/20 to-orange-600/5",
-    border: "border-orange-500/20",
-    iconColor: "text-orange-400",
   },
   {
     icon: Globe,

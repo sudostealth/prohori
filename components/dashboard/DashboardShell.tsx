@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Shield, LayoutDashboard, Brain, Users, Settings,
+  Shield, LayoutDashboard, Brain, Settings,
   Bell, LogOut, Menu, Zap
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -26,7 +26,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/ai-analyst", label: "AI Analyst", icon: Brain },
   { href: "/dashboard/compliance", label: "Compliance", icon: Shield },
   { href: "/dashboard/endpoints", label: "Endpoints", icon: LayoutDashboard },
-  { href: "/dashboard/hrm", label: "HRM & Access", icon: Users },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 

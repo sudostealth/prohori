@@ -123,22 +123,6 @@ CREATE TABLE IF NOT EXISTS platform_content (
 );
 
 -- =============================================================================
--- TABLE: hrm_members
--- HRM - Team members within a company
--- =============================================================================
-CREATE TABLE IF NOT EXISTS hrm_members (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user', 'viewer', 'researcher')),
-  permissions JSONB DEFAULT '{}'::JSONB,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_by UUID REFERENCES auth.users(id),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 -- =============================================================================
 -- TABLE: audit_logs
 -- User activity audit trail
@@ -318,7 +302,6 @@ ALTER TABLE subscription_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE active_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coupon_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE platform_content ENABLE ROW LEVEL SECURITY;
-ALTER TABLE hrm_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE security_alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE server_metrics ENABLE ROW LEVEL SECURITY;
@@ -334,8 +317,6 @@ CREATE POLICY "companies_select_own" ON companies FOR SELECT USING (owner_id = a
 CREATE POLICY "companies_insert_own" ON companies FOR INSERT WITH CHECK (owner_id = auth.uid());
 CREATE POLICY "companies_update_own" ON companies FOR UPDATE USING (owner_id = auth.uid() OR is_admin());
 CREATE POLICY "companies_delete_admin" ON companies FOR DELETE USING (is_admin());
-CREATE POLICY "companies_select_member" ON companies FOR SELECT
-  USING (id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
 
 -- Profiles policies
 CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (auth.uid() = id OR is_admin());
@@ -353,7 +334,7 @@ CREATE POLICY "plans_delete_admin" ON subscription_plans FOR DELETE USING (is_ad
 CREATE POLICY "sub_requests_select_own" ON subscription_requests FOR SELECT
   USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()) OR is_admin());
 CREATE POLICY "sub_requests_insert_own" ON subscription_requests FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()) OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
 CREATE POLICY "sub_requests_update_admin" ON subscription_requests FOR UPDATE USING (is_admin());
 CREATE POLICY "sub_requests_delete_admin" ON subscription_requests FOR DELETE USING (is_admin());
 
@@ -373,16 +354,6 @@ CREATE POLICY "coupons_delete_admin" ON coupon_codes FOR DELETE USING (is_admin(
 -- Platform content: published content is public
 CREATE POLICY "content_select_published" ON platform_content FOR SELECT USING (is_published = TRUE);
 
--- HRM members: company members
-CREATE POLICY "hrm_select_company" ON hrm_members FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()) OR user_id = auth.uid());
-CREATE POLICY "hrm_insert_company" ON hrm_members FOR INSERT
-  WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
-CREATE POLICY "hrm_update_company" ON hrm_members FOR UPDATE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
-CREATE POLICY "hrm_delete_company" ON hrm_members FOR DELETE
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
-
 -- Audit logs: company owner
 CREATE POLICY "audit_select_own" ON audit_logs FOR SELECT
   USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
@@ -391,8 +362,7 @@ CREATE POLICY "audit_insert_own" ON audit_logs FOR INSERT
 
 -- Security alerts: company can read own
 CREATE POLICY "alerts_select_own" ON security_alerts FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid())
-    OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
 CREATE POLICY "alerts_insert_own" ON security_alerts FOR INSERT
   WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
 CREATE POLICY "alerts_update_own" ON security_alerts FOR UPDATE
@@ -416,8 +386,7 @@ CREATE POLICY "endpoints_delete_own" ON endpoints FOR DELETE
 
 -- Wazuh agents: company can manage own
 CREATE POLICY "wazuh_agents_select_own" ON wazuh_agents FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid())
-    OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
 CREATE POLICY "wazuh_agents_insert_own" ON wazuh_agents FOR INSERT
   WITH CHECK (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
 CREATE POLICY "wazuh_agents_update_own" ON wazuh_agents FOR UPDATE
@@ -427,8 +396,7 @@ CREATE POLICY "wazuh_agents_delete_own" ON wazuh_agents FOR DELETE
 
 -- Wazuh alerts: company can read own
 CREATE POLICY "wazuh_alerts_select_own" ON wazuh_alerts FOR SELECT
-  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid())
-    OR company_id IN (SELECT company_id FROM hrm_members WHERE user_id = auth.uid()));
+  USING (company_id IN (SELECT id FROM companies WHERE owner_id = auth.uid()));
 
 -- Usage tracking: company can manage own
 CREATE POLICY "usage_select_own" ON usage_tracking FOR SELECT
@@ -458,8 +426,6 @@ CREATE INDEX IF NOT EXISTS idx_profiles_user ON profiles(id);
 CREATE INDEX IF NOT EXISTS idx_subscription_requests_company ON subscription_requests(company_id);
 CREATE INDEX IF NOT EXISTS idx_subscription_requests_status ON subscription_requests(status);
 CREATE INDEX IF NOT EXISTS idx_active_subscriptions_company ON active_subscriptions(company_id);
-CREATE INDEX IF NOT EXISTS idx_hrm_members_company ON hrm_members(company_id);
-CREATE INDEX IF NOT EXISTS idx_hrm_members_user ON hrm_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_company ON audit_logs(company_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
