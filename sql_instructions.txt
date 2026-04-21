@@ -1,0 +1,39 @@
+-- 1. Create a bucket named "logs"
+insert into storage.buckets (id, name, public) values ('logs', 'logs', false);
+
+-- 2. Create a table to track uploaded log files
+CREATE TABLE IF NOT EXISTS company_uploaded_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT,
+  row_count INTEGER,
+  summary TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE company_uploaded_logs ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Users can view their company logs" ON company_uploaded_logs
+  FOR SELECT USING (
+    company_id IN (
+      SELECT company_id FROM profiles WHERE id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can insert their company logs" ON company_uploaded_logs
+  FOR INSERT WITH CHECK (
+    company_id IN (
+      SELECT company_id FROM profiles WHERE id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete their company logs" ON company_uploaded_logs
+  FOR DELETE USING (
+    company_id IN (
+      SELECT company_id FROM profiles WHERE id = auth.uid()
+    )
+  );

@@ -1,7 +1,9 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { Brain, Send, Loader2, Globe, ChevronDown, AlertTriangle } from "lucide-react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { Brain, Send, Loader2, Globe, ChevronDown, AlertTriangle, FileSpreadsheet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
+import type { CompanyUploadedLog } from "@/types";
 
 interface Message {
   id: string;
@@ -17,7 +19,7 @@ const SAMPLE_PROMPTS = [
   "What steps should I take to prevent ransomware?",
 ];
 
-export default function AIAnalystPage() {
+function AIAnalystContent() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -34,10 +36,37 @@ export default function AIAnalystPage() {
   const [modelOpen, setModelOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const searchParams = useSearchParams();
+  const logId = searchParams.get("logId");
+  const [activeLog, setActiveLog] = useState<CompanyUploadedLog | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (logId) {
+      fetch(`/api/get-log?id=${logId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.log) {
+            setActiveLog(data.log);
+            setMessages(prev => {
+              if (!prev.find(m => m.id === "log_context")) {
+                return [...prev, {
+                  id: "log_context",
+                  role: "assistant",
+                  content: `I can see you uploaded a log file: "${data.log.file_name}" (${data.log.row_count} rows). What would you like to know about it?`,
+                  timestamp: new Date()
+                }];
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(err => console.error("Error fetching log context:", err));
+    }
+  }, [logId]);
 
   const sendMessage = async (text?: string) => {
     const content = text || input.trim();
@@ -48,11 +77,16 @@ export default function AIAnalystPage() {
     setInput("");
     setLoading(true);
 
+    let promptPrefix = "";
+    if (activeLog) {
+      promptPrefix = `[CONTEXT: The user uploaded a log file named "${activeLog.file_name}" with ${activeLog.row_count} rows. File summary/columns: ${activeLog.summary}. Please factor this context into your response.]\n\n`;
+    }
+
     try {
       const res = await fetch("/api/explain-alert", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: content, language, provider: model }),
+        body: JSON.stringify({ question: promptPrefix + content, language, provider: model }),
       });
       const data = await res.json();
       const aiMsg: Message = {
@@ -94,6 +128,12 @@ export default function AIAnalystPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {activeLog && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 mr-2">
+              <FileSpreadsheet className="w-3.5 h-3.5 text-purple-400" />
+              <span className="text-xs text-purple-300 truncate max-w-[150px]">{activeLog.file_name}</span>
+            </div>
+          )}
           {/* Model selector */}
           <div className="relative">
             <button
@@ -246,5 +286,13 @@ export default function AIAnalystPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function AIAnalystPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-500" /></div>}>
+      <AIAnalystContent />
+    </Suspense>
   );
 }
