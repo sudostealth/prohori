@@ -152,7 +152,7 @@ export default function AIAnalystChat() {
           <MessageSquare className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_5px_currentColor]" />
           <div>
             <h3 className="text-base font-semibold text-white mt-0">AI Security Analyst</h3>
-            <p className="text-xs text-gray-400">Powered by multiple AI models</p>
+            <p className="text-xs text-gray-400">Powered by AgentRouter</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">

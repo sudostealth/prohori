@@ -5,50 +5,12 @@ import { WazuhClient } from "@/lib/wazuh/client";
 import { decrypt } from "@/lib/encryption";
 import { withMonitoring } from "@/lib/monitor";
 import { aiRateLimiter, getClientIp, rateLimitHeaders } from "@/lib/rate-limit";
-import { AIService } from "@/lib/ai";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 
 export const dynamic = 'force-dynamic';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// Initialize AI service with provider configurations
-const aiService = new AIService({
-  providers: {
-    groq: {
-      apiKey: process.env.GROQ_API_KEY || '',
-      model: process.env.GROQ_MODEL || 'llama3-70b-8192',
-      temperature: parseFloat(process.env.GROQ_TEMPERATURE || '0.5'),
-      maxTokens: parseInt(process.env.GROQ_MAX_TOKENS || '600', 10)
-    },
-    gemini: {
-      apiKey: process.env.GEMINI_API_KEY || '',
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
-      temperature: parseFloat(process.env.GEMINI_TEMPERATURE || '0.5'),
-      maxTokens: parseInt(process.env.GEMINI_MAX_TOKENS || '600', 10)
-    },
-    openrouter: {
-      apiKey: process.env.OPENROUTER_API_KEY || '',
-      model: process.env.OPENROUTER_MODEL || 'google/gemma-3-12b-it:free',
-      temperature: parseFloat(process.env.OPENROUTER_TEMPERATURE || '0.5'),
-      maxTokens: parseInt(process.env.OPENROUTER_MAX_TOKENS || '600', 10)
-    },
-    huggingface: {
-      apiKey: process.env.HUGGINGFACE_API_KEY || '',
-      model: process.env.HUGGINGFACE_MODEL || 'Qwen/Qwen2.5-7B-Instruct',
-      temperature: parseFloat(process.env.HUGGINGFACE_TEMPERATURE || '0.5'),
-      maxTokens: parseInt(process.env.HUGGINGFACE_MAX_TOKENS || '600', 10)
-    }
-  },
-  priority: [
-    'groq' as const,
-    'gemini' as const,
-    'openrouter' as const,
-    'huggingface' as const
-  ],
-  fallbackEnabled: process.env.AI_FALLBACK_ENABLED === 'true' || true
-});
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGet(request: NextRequest): Promise<NextResponse> {
@@ -147,18 +109,15 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
   }
   
   try {
-    const { question, language = "en", serverData } = await request.json();
+    const { question, language = "en", serverData, model = "auto" } = await request.json();
     
     if (!question) {
       return NextResponse.json({ error: "Question required" }, { status: 400 });
     }
     
-    // Check if any AI provider is configured
-    const providerStatus = aiService.getProviderStatus();
-    const anyProviderConfigured = Object.values(providerStatus).some(status => status.configured);
-    
-    if (!anyProviderConfigured) {
-      return NextResponse.json({ error: "No AI providers configured" }, { status: 500 });
+    const apiKey = process.env.AGENTROUTER_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "AgentRouter API Key not configured" }, { status: 500 });
     }
     
     const serverInfo = serverData ? `
@@ -193,13 +152,35 @@ Reference Bangladesh's Cyber Security Act 2023 when relevant for security threat
       { role: "user", content: question },
     ];
     
-    const aiResponse = await aiService.generateCompletion(messages);
+    const res = await fetch("https://agentrouter.org/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+      })
+    });
+
+    if (!res.ok) {
+      const errorData = await res.text();
+      console.error("AgentRouter Error:", errorData);
+      throw new Error(`AgentRouter API error: ${res.status}`);
+    }
+
+    const data = await res.json();
     
     return NextResponse.json({ 
-      answer: aiResponse.text,
-      usage: aiResponse.usage,
-      model: aiResponse.model,
-      provider: aiResponse.provider 
+      answer: data.choices?.[0]?.message?.content || "I could not generate a response. Please try again.",
+      usage: {
+        promptTokens: data.usage?.prompt_tokens,
+        completionTokens: data.usage?.completion_tokens,
+        totalTokens: data.usage?.total_tokens,
+      },
+      model: data.model,
+      provider: "AgentRouter"
     }, { headers: rateLimitHeaders(rateCheck) });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "AI error";
