@@ -106,7 +106,7 @@ export default function DashboardMetrics({ companyId, source, logId }: Dashboard
                   </span>
                 </div>
               </div>
-            )) : <p className="text-sm text-gray-500">No threat categories detected.</p>}
+            )) : <p className="text-sm text-gray-500">No information found.</p>}
           </div>
         </div>
 
@@ -120,7 +120,7 @@ export default function DashboardMetrics({ companyId, source, logId }: Dashboard
                 <span className="text-sm text-gray-300">{mt.tactic}</span>
                 <span className="text-sm font-bold text-orange-400">{mt.count}</span>
               </div>
-            )) : <p className="text-sm text-gray-500">No MITRE tactics detected.</p>}
+            )) : <p className="text-sm text-gray-500">No information found.</p>}
           </div>
         </div>
 
@@ -143,7 +143,7 @@ export default function DashboardMetrics({ companyId, source, logId }: Dashboard
                   <p className="text-sm text-gray-300 mt-0.5">{at.event}</p>
                 </div>
               </div>
-            )) : <p className="text-sm text-gray-500">No events found.</p>}
+            )) : <p className="text-sm text-gray-500">No information found.</p>}
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export default function DashboardMetrics({ companyId, source, logId }: Dashboard
                     <div className={`w-2 h-2 rounded-full ${sh.severity === 'critical' ? 'bg-red-500' : sh.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'}`} />
                     <span className="text-sm text-gray-300">{sh.alert}</span>
                   </div>
-                )) : <p className="text-sm text-gray-500">No alerts found.</p>}
+                )) : <p className="text-sm text-gray-500">No information found.</p>}
               </div>
            </div>
 
@@ -171,7 +171,7 @@ export default function DashboardMetrics({ companyId, source, logId }: Dashboard
                   <div key={i} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-300 flex items-center gap-2">
                     {ip.ip} <span className="text-xs text-red-400 bg-red-500/10 px-1.5 rounded">{ip.count}</span>
                   </div>
-                )) : <p className="text-sm text-gray-500">No attacker IPs found.</p>}
+                )) : <p className="text-sm text-gray-500">No information found.</p>}
               </div>
            </div>
         </div>
