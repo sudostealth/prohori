@@ -38,7 +38,7 @@ function AIAnalystContent() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const searchParams = useSearchParams();
   const logId = searchParams.get("logId");
-  const [activeLog, setActiveLog] = useState<CompanyUploadedLog | null>(null);
+  const [activeLogs, setActiveLogs] = useState<CompanyUploadedLog[]>([]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,7 +50,7 @@ function AIAnalystContent() {
         .then(res => res.json())
         .then(data => {
           if (data.log) {
-            setActiveLog(data.log);
+            setActiveLogs([data.log]);
             setMessages(prev => {
               if (!prev.find(m => m.id === "log_context")) {
                 return [...prev, {
@@ -65,6 +65,27 @@ function AIAnalystContent() {
           }
         })
         .catch(err => console.error("Error fetching log context:", err));
+    } else {
+      fetch(`/api/logs`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.logs && data.logs.length > 0) {
+            const recentLogs = data.logs.slice(0, 5);
+            setActiveLogs(recentLogs);
+            setMessages(prev => {
+              if (!prev.find(m => m.id === "recent_logs_context")) {
+                return [...prev, {
+                  id: "recent_logs_context",
+                  role: "assistant",
+                  content: "I see you've recently uploaded some logs, you can ask me about them!",
+                  timestamp: new Date()
+                }];
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(err => console.error("Error fetching recent logs:", err));
     }
   }, [logId]);
 
@@ -78,8 +99,11 @@ function AIAnalystContent() {
     setLoading(true);
 
     let promptPrefix = "";
-    if (activeLog) {
-      promptPrefix = `[CONTEXT: The user uploaded a log file named "${activeLog.file_name}" with ${activeLog.row_count} rows. File summary/columns: ${activeLog.summary}. Please factor this context into your response.]\n\n`;
+    if (activeLogs.length > 0) {
+      const logsContext = activeLogs.map((log, index) =>
+        `Log ${index + 1}: Name="${log.file_name}", Rows=${log.row_count}, Summary/Columns="${log.summary}"`
+      ).join("\n");
+      promptPrefix = `[CONTEXT: The user has uploaded the following log files recently. Please factor this context into your response if the user asks about their logs:\n${logsContext}]\n\n`;
     }
 
     try {
@@ -128,10 +152,12 @@ function AIAnalystContent() {
         </div>
 
         <div className="flex items-center gap-3">
-          {activeLog && (
+          {activeLogs.length > 0 && (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 mr-2">
               <FileSpreadsheet className="w-3.5 h-3.5 text-purple-400" />
-              <span className="text-xs text-purple-300 truncate max-w-[150px]">{activeLog.file_name}</span>
+              <span className="text-xs text-purple-300 truncate max-w-[150px]">
+                {activeLogs.length === 1 ? activeLogs[0].file_name : `${activeLogs.length} logs ready`}
+              </span>
             </div>
           )}
           {/* Model selector */}
