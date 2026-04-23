@@ -40,12 +40,15 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   // Fetch uploaded logs count
-  const { count: logsCount } = await supabase
+  const { count: logsCount, data: latestLogs } = await supabase
     .from("company_uploaded_logs")
-    .select("*", { count: 'exact', head: true })
-    .eq("company_id", company?.id || "");
+    .select("*", { count: 'exact' })
+    .eq("company_id", company?.id || "")
+    .order("created_at", { ascending: false })
+    .limit(1);
 
   const hasUploadedLogs = logsCount ? logsCount > 0 : false;
+  const latestLogId = hasUploadedLogs && latestLogs ? latestLogs[0].id : undefined;
 
   return (
     <DashboardMain
@@ -55,6 +58,7 @@ export default async function DashboardPage() {
       activeSub={activeSub}
       serverConnected={(company?.server_connected as boolean) || false}
       hasUploadedLogs={hasUploadedLogs}
+      latestLogId={latestLogId}
     />
   );
 }

@@ -10,12 +10,29 @@ import { Button } from "@/components/ui/button";
 export default function CompliancePage() {
   const [generating, setGenerating] = useState(false);
 
+  const [format, setFormat] = useState<"pdf" | "docx" | "html">("pdf");
+
   const handleGenerate = async () => {
     setGenerating(true);
-    // Simulate generation delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setGenerating(false);
-    toast.success("CSA 2023 Compliance Report generated successfully! Downloading...");
+    try {
+      const res = await fetch(`/api/download-report?format=${format}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const ext = format === "docx" ? "docx" : format === "pdf" ? "pdf" : "html";
+        a.download = `prohori-report-${new Date().toISOString().split("T")[0]}.${ext}`;
+        a.click();
+        toast.success(`CSA 2023 Compliance Report (${format.toUpperCase()}) downloaded successfully!`);
+      } else {
+        toast.error("Failed to generate report.");
+      }
+    } catch {
+      toast.error("An error occurred while downloading.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -40,18 +57,29 @@ export default function CompliancePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-               <Button 
-                 onClick={handleGenerate} 
-                 disabled={generating}
-                 size="lg"
-                 className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold tracking-wide shadow-[0_0_20px_rgba(0,212,255,0.3)]"
-               >
-                 {generating ? (
-                   <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}><Clock className="w-5 h-5 mr-2" /></motion.div> Generating Report...</>
-                 ) : (
-                   <><Download className="w-5 h-5 mr-2" /> Generate Compliance Report</>
-                 )}
-               </Button>
+               <div className="flex flex-col sm:flex-row gap-4 items-center">
+                 <select
+                   value={format}
+                   onChange={(e) => setFormat(e.target.value as "pdf" | "docx" | "html")}
+                   className="bg-navy-950 border border-white/20 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 outline-none"
+                 >
+                   <option value="pdf">PDF Document (.pdf)</option>
+                   <option value="docx">Word Document (.docx)</option>
+                   <option value="html">Web Page (.html)</option>
+                 </select>
+                 <Button
+                   onClick={handleGenerate}
+                   disabled={generating}
+                   size="lg"
+                   className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold tracking-wide shadow-[0_0_20px_rgba(0,212,255,0.3)]"
+                 >
+                   {generating ? (
+                     <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, ease: "linear", duration: 1 }}><Clock className="w-5 h-5 mr-2" /></motion.div> Generating...</>
+                   ) : (
+                     <><Download className="w-5 h-5 mr-2" /> Download</>
+                   )}
+                 </Button>
+               </div>
             </CardContent>
           </Card>
         </motion.div>

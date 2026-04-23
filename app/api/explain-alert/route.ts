@@ -6,12 +6,13 @@ export async function POST(req: NextRequest) {
     if (!question) return NextResponse.json({ error: "Question required" }, { status: 400 });
 
     const systemPrompt = language === "bn"
-      ? `আপনি Prohori-র AI নিরাপত্তা বিশ্লেষক। আপনি বাংলায় উত্তর দেবেন। প্রযুক্তিগত নিরাপত্তা বিষয়গুলি সহজ বাংলায় ব্যাখ্যা করুন। সংক্ষিপ্ত এবং কার্যকর পরামর্শ দিন।`
-      : `You are Prohori's AI Security Analyst for Bangladeshi SMEs. 
-         Explain security threats in simple, non-technical language. 
-         Always provide: 1) What the threat is, 2) Why it's dangerous, 3) Specific next steps to mitigate it.
-         Keep responses concise (under 300 words) and actionable.
-         Reference Bangladesh's Cyber Security Act 2023 when relevant.`;
+      ? `আপনি Prohori-র AI নিরাপত্তা বিশ্লেষক। আপনি একজন দক্ষ এবং অভিজ্ঞ সাইবার সিকিউরিটি এক্সপার্ট।
+         ব্যবহারকারীর প্রশ্নের সঠিক, তথ্যবহুল এবং সহজবোধ্য উত্তর দিন।
+         আপনার উত্তরগুলি যেন প্রফেশনাল এবং সহায়ক হয়।`
+      : `You are Prohori's AI Security Analyst, an expert and highly knowledgeable cybersecurity professional.
+         Provide accurate, informative, and easy-to-understand answers to the user's questions.
+         Ensure your responses are professional, helpful, and directly address the user's query.
+         If discussing specific threats, include brief actionable mitigation steps.`;
 
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "Missing OpenRouter API Key" }, { status: 500 });
