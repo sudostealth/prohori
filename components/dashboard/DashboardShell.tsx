@@ -136,7 +136,7 @@ export default function DashboardShell({
   return (
     <div className="flex h-screen overflow-hidden bg-navy-950 text-gray-100 selection:bg-cyan-500/30">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 flex-col bg-navy-950 border-r border-y-0 rounded-none border-l-0 border-white/5 flex-shrink-0 z-20 shadow-xl">
+      <aside className="hidden md:flex w-64 flex-col bg-[#050912] border-r border-y-0 rounded-none border-l-0 border-white/5 flex-shrink-0 z-20 shadow-xl">
         <SidebarContent />
       </aside>
 
@@ -152,7 +152,7 @@ export default function DashboardShell({
             <motion.aside 
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="md:hidden fixed inset-y-0 left-0 w-72 bg-navy-950 rounded-none border-r border-white/10 flex-shrink-0 z-50 shadow-2xl"
+              className="md:hidden fixed inset-y-0 left-0 w-72 bg-[#050912] rounded-none border-r border-white/10 flex-shrink-0 z-50 shadow-2xl"
             >
               <SidebarContent />
             </motion.aside>
