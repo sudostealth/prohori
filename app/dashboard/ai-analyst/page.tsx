@@ -32,7 +32,7 @@ function AIAnalystContent() {
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState<"en" | "bn">("en");
   const [langOpen, setLangOpen] = useState(false);
-  const [model, setModel] = useState<"auto" | "deepseek-r1" | "qwen/qwen-3-72b" | "meta-llama/llama-3.3-70b-instruct" | "zhipu/glm-4">("auto");
+  const [model, setModel] = useState<"qwen/qwen3-235b-a22b" | "deepseek/deepseek-r1-0528" | "qwen/qwen3-30b-a3b:free">("qwen/qwen3-235b-a22b");
   const [modelOpen, setModelOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -141,21 +141,19 @@ function AIAnalystContent() {
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/8 text-sm text-gray-300 hover:border-white/15 transition-all"
             >
               <Brain className="w-3.5 h-3.5 text-purple-400" />
-              {model === "auto" ? "AgentRouter (Auto)" : model === "deepseek-r1" ? "DeepSeek R1" : model === "qwen/qwen-3-72b" ? "Qwen3 72B" : model === "meta-llama/llama-3.3-70b-instruct" ? "Llama 3.3 70B" : "GLM-4"}
+              {model === "qwen/qwen3-235b-a22b" ? "Qwen3 235B (Primary)" : model === "deepseek/deepseek-r1-0528" ? "DeepSeek R1 (Fallback)" : "Qwen3 30B (Budget)"}
               <ChevronDown className="w-3.5 h-3.5" />
             </button>
             {modelOpen && (
               <div className="absolute right-0 top-full mt-1 glass-card py-1 w-56 z-20">
                 {[
-                  { value: "auto", label: "AgentRouter (Auto)", desc: "Automatically routes to best free model." },
-                  { value: "deepseek-r1", label: "DeepSeek R1", desc: "Strong reasoning, great for log errors." },
-                  { value: "qwen/qwen-3-72b", label: "Qwen3 72B", desc: "Best multilingual (Bengali + English)." },
-                  { value: "meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B", desc: "GPT-4 level quality, entirely free." },
-                  { value: "zhipu/glm-4", label: "GLM-4", desc: "Zhipu AI free model, great backup." }
+                  { value: "qwen/qwen3-235b-a22b", label: "Qwen3 235B (Primary)", desc: "Best for Bengali & 262K context window." },
+                  { value: "deepseek/deepseek-r1-0528", label: "DeepSeek R1 (Fallback)", desc: "Strong reasoning & technical analysis." },
+                  { value: "qwen/qwen3-30b-a3b:free", label: "Qwen3 30B (Budget)", desc: "Free tier, good for quick Q&A." }
                 ].map((m) => (
                   <button
                     key={m.value}
-                    onClick={() => { setModel(m.value as "auto" | "deepseek-r1" | "qwen/qwen-3-72b" | "meta-llama/llama-3.3-70b-instruct" | "zhipu/glm-4"); setModelOpen(false); }}
+                    onClick={() => { setModel(m.value as "qwen/qwen3-235b-a22b" | "deepseek/deepseek-r1-0528" | "qwen/qwen3-30b-a3b:free"); setModelOpen(false); }}
                     className={`w-full text-left px-3 py-2 text-sm transition-all block ${model === m.value ? "text-purple-400 bg-purple-500/10" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
                   >
                     <div className="font-bold">{m.label}</div>

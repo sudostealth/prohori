@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Lock, Mail, Trash2, Eye, EyeOff, Loader2, AlertTriangle, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import toast from "react-hot-toast";
 
 interface SettingsPageProps {
@@ -110,9 +111,22 @@ export default function UserSettingsPage({ companyName }: SettingsPageProps) {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Account Settings</h1>
-        <p className="text-gray-500 text-sm mt-1">Manage your credentials and account</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Account Settings</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage your credentials and account</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Link href="/dashboard/settings/wazuh" className="glass-card-hover p-4 border border-white/5 hover:border-cyan-500/30 transition-all text-left">
+          <h3 className="font-bold text-white mb-1">Wazuh Settings</h3>
+          <p className="text-xs text-gray-400">Configure your Wazuh manager connection.</p>
+        </Link>
+        <Link href="/dashboard/settings/logs" className="glass-card-hover p-4 border border-white/5 hover:border-purple-500/30 transition-all text-left">
+          <h3 className="font-bold text-white mb-1">Uploaded Logs</h3>
+          <p className="text-xs text-gray-400">Manage and delete manually uploaded logs.</p>
+        </Link>
       </div>
 
       {/* Change Password */}

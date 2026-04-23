@@ -13,6 +13,7 @@ interface DashboardMainProps {
   metrics: ServerMetric[];
   activeSub: Record<string, unknown> | null;
   serverConnected: boolean;
+  hasUploadedLogs: boolean;
 }
 
 const SEVERITY_CONFIG = {
@@ -92,15 +93,99 @@ function GaugeCircle({ value, label, color }: { value: number; label: string; co
 }
 
 function OnboardingPanel({ serverConnected, agentsDeployed }: { serverConnected: boolean; agentsDeployed: boolean }) {
-  // If not connected, start at Step 1 (index 0).
-  // If connected but no agents, jump to Step 3 (index 2).
-  const initialStep = serverConnected && !agentsDeployed ? 2 : 0;
-  const [activeStep, setActiveStep] = useState(initialStep);
+  const [mode, setMode] = useState<"choose" | "wazuh" | "upload">("choose");
+  const [uploading, setUploading] = useState(false);
+  const [activeStep, setActiveStep] = useState(serverConnected && !agentsDeployed ? 2 : 0);
 
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/logs/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        alert("Upload failed. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred during upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (mode === "choose") {
+    return (
+      <div className="glass-card p-8 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-white tracking-tight">Welcome to Prohori</h2>
+          <p className="text-gray-400 text-sm mt-2">Choose how you want to connect your data to get started.</p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6">
+          <button onClick={() => setMode("wazuh")} className="glass-card-hover p-6 text-left group border border-white/5 hover:border-cyan-500/30 transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(0,212,255,0.2)] group-hover:shadow-[0_0_20px_rgba(0,212,255,0.4)] transition-all">
+              <Server className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Connect Wazuh Server</h3>
+            <p className="text-sm text-gray-400">Connect to your existing Wazuh manager to stream live alerts and metrics.</p>
+          </button>
+
+          <button onClick={() => setMode("upload")} className="glass-card-hover p-6 text-left group border border-white/5 hover:border-purple-500/30 transition-all">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all">
+              <Download className="w-6 h-6 text-white rotate-180" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Upload Log File</h3>
+            <p className="text-sm text-gray-400">Upload a single log, CSV, or Excel file to analyze offline with our AI Analyst.</p>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "upload") {
+    return (
+      <div className="glass-card p-8 border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-pink-500/5 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.3)] mx-auto mb-6">
+          <Download className="w-8 h-8 text-white rotate-180" />
+        </div>
+        <h2 className="text-2xl font-bold text-white tracking-tight mb-2">Upload Your Log File</h2>
+        <p className="text-gray-400 text-sm mb-8 max-w-md mx-auto">Select a .log, .csv, or .xls file from your computer. Our AI will analyze it to help you identify threats.</p>
+
+        <label className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-400 text-white font-bold px-8 py-3 rounded-lg transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+          {uploading ? (
+            <>Uploading... <RefreshCw className="w-4 h-4 animate-spin" /></>
+          ) : (
+            <>Select File <Download className="w-4 h-4 rotate-180" /></>
+          )}
+          <input type="file" className="hidden" accept=".log,.csv,.xls,.xlsx,.txt" onChange={handleUpload} disabled={uploading} />
+        </label>
+
+        <div className="mt-8">
+          <button onClick={() => setMode("choose")} className="text-sm text-gray-400 hover:text-white transition-colors">← Back to options</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Wazuh Mode
   return (
     <div className="glass-card p-8 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border-b border-white/5 pb-6">
         <div className="flex items-center gap-4">
+          <button onClick={() => setMode("choose")} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors mr-2">
+             <ChevronDown className="w-4 h-4 rotate-90" />
+          </button>
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.3)] shrink-0">
             <Server className="w-6 h-6 text-white" />
           </div>
@@ -214,6 +299,7 @@ export default function DashboardMain({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   activeSub,
   serverConnected,
+  hasUploadedLogs,
 }: DashboardMainProps) {
   const [downloading, setDownloading] = useState(false);
 
@@ -269,23 +355,48 @@ export default function DashboardMain({
         </div>
       </div>
 
-      {/* Show full onboarding if not connected or no agents are deployed */}
-      {(!serverConnected || !agentsDeployed) ? (
+      {/* Show full onboarding if not connected or no agents are deployed AND no logs are uploaded */}
+      {(!serverConnected || !agentsDeployed) && !hasUploadedLogs ? (
         <OnboardingPanel serverConnected={serverConnected} agentsDeployed={agentsDeployed} />
       ) : (
-        <div className="glass-card p-4 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-green-400" />
+        <div className="flex flex-col gap-4">
+          {serverConnected && agentsDeployed && (
+            <div className="glass-card p-4 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Wazuh Server Connected</p>
+                  <p className="text-xs text-green-400">Monitoring {metrics.length} agents actively</p>
+                </div>
+              </div>
+              <Link href="/dashboard/settings/wazuh" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
+                <Server className="w-3.5 h-3.5" /> Configure
+              </Link>
             </div>
-            <div>
-              <p className="text-sm font-bold text-white">Wazuh Server Connected</p>
-              <p className="text-xs text-green-400">Monitoring {metrics.length} agents actively</p>
+          )}
+          {hasUploadedLogs && (
+            <div className="glass-card p-4 border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-pink-500/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                  <Download className="w-5 h-5 text-purple-400 rotate-180" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">Log File Uploaded</p>
+                  <p className="text-xs text-purple-400">Ready for AI Analysis</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href="/dashboard/ai-analyst" className="btn-primary py-1.5 px-3 text-xs flex items-center gap-2">
+                  Analyze Log
+                </Link>
+                <Link href="/dashboard/settings/logs" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
+                  Manage
+                </Link>
+              </div>
             </div>
-          </div>
-          <Link href="/dashboard/settings/wazuh" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
-            <Server className="w-3.5 h-3.5" /> Configure
-          </Link>
+          )}
         </div>
       )}
 
