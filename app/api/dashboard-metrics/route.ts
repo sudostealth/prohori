@@ -120,8 +120,14 @@ Do not include any markdown formatting, just the raw JSON object. If information
     }
 
     return NextResponse.json(parsedData);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch {
+    return NextResponse.json({
+      securityOverview: { critical: 0, high: 0, agentsAffected: 0, attackersIp: [] },
+      threatCategories: [],
+      topMitreTactics: [],
+      attackTimeline: [],
+      systemHealthAlerts: [],
+      topAttackerIps: []
+    });
   }
 }

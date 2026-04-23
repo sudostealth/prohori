@@ -418,13 +418,11 @@ export default function DashboardMain({
 
 
       {/* AI Enhanced Metrics View */}
-      {(serverConnected || hasUploadedLogs) && (
-        <DashboardMetrics
-          companyId={company?.id as string}
-          source={hasUploadedLogs ? "log" : "wazuh"}
-          logId={hasUploadedLogs ? latestLogId : undefined}
-        />
-      )}
+      <DashboardMetrics
+        companyId={company?.id as string}
+        source={hasUploadedLogs ? "log" : "wazuh"}
+        logId={hasUploadedLogs ? latestLogId : undefined}
+      />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
