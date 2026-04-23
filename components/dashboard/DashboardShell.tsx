@@ -107,7 +107,7 @@ export default function DashboardShell({
               {active && mounted && (
                 <motion.div 
                   layoutId="activeSidebar"
-                  className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent border-l-2 border-cyan-500 rounded-r-lg rounded-l-sm"
+                  className="absolute inset-0 bg-cyan-500/10 border-l-2 border-cyan-500 rounded-r-lg rounded-l-sm"
                   initial={false}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
@@ -136,7 +136,7 @@ export default function DashboardShell({
   return (
     <div className="flex h-screen overflow-hidden bg-navy-950 text-gray-100 selection:bg-cyan-500/30">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 flex-col glass-card border-r border-y-0 rounded-none border-l-0 border-white/5 flex-shrink-0 z-20">
+      <aside className="hidden md:flex w-64 flex-col bg-navy-950 border-r border-y-0 rounded-none border-l-0 border-white/5 flex-shrink-0 z-20 shadow-xl">
         <SidebarContent />
       </aside>
 
@@ -152,7 +152,7 @@ export default function DashboardShell({
             <motion.aside 
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="md:hidden fixed inset-y-0 left-0 w-72 glass-card rounded-none border-r border-white/10 flex-shrink-0 z-50 shadow-2xl"
+              className="md:hidden fixed inset-y-0 left-0 w-72 bg-navy-950 rounded-none border-r border-white/10 flex-shrink-0 z-50 shadow-2xl"
             >
               <SidebarContent />
             </motion.aside>
@@ -163,7 +163,7 @@ export default function DashboardShell({
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 bg-navy-900 overflow-hidden relative z-10">
         {/* Top bar */}
-        <header className="flex items-center justify-between px-6 py-4 glass-card border-b border-white/5 border-t-0 border-x-0 rounded-none flex-shrink-0 sticky top-0 z-30">
+        <header className="flex items-center justify-between px-6 py-4 bg-navy-950 border-b border-white/5 border-t-0 border-x-0 rounded-none flex-shrink-0 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-4">
             <button
               className="md:hidden p-1.5 -ml-1.5 text-gray-400 hover:text-white rounded-md hover:bg-white/5 transition-colors"

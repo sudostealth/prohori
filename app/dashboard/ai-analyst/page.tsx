@@ -114,9 +114,9 @@ function AIAnalystContent() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)]">
+    <div className="flex flex-col h-[calc(100vh-120px)] max-w-5xl mx-auto w-full bg-navy-950/50 rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-shrink-0">
+      <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 border border-purple-500/30 flex items-center justify-center">
             <Brain className="w-5 h-5 text-purple-400" />
@@ -226,8 +226,8 @@ function AIAnalystContent() {
               <div
                 className={`max-w-[85%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
                   msg.role === "user"
-                    ? "bg-gradient-to-br from-cyan-500/20 to-purple-600/20 border border-cyan-500/20 text-white rounded-tr-sm shadow-cyan-500/5"
-                    : "bg-navy-800/80 border border-white/5 backdrop-blur-md text-gray-200 rounded-tl-sm shadow-white/5"
+                    ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-tr-sm shadow-md"
+                    : "bg-navy-900 border border-white/5 text-gray-100 rounded-tl-sm shadow-md"
                 }`}
               >
                 {msg.content}
@@ -266,11 +266,11 @@ function AIAnalystContent() {
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 glass-card p-3 flex items-end gap-3">
+      <div className="flex-shrink-0 bg-navy-900 border border-white/10 rounded-2xl p-3 flex items-end gap-3 shadow-lg focus-within:border-cyan-500/50 focus-within:ring-1 focus-within:ring-cyan-500/50 transition-all">
         <textarea
           ref={inputRef}
           rows={1}
-          className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none resize-none max-h-32"
+          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none resize-none max-h-32 py-2 px-2"
           placeholder={language === "en" ? "Ask about a security alert, threat, or best practice..." : "নিরাপত্তা সম্পর্কে প্রশ্ন করুন..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}

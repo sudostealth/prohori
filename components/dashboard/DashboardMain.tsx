@@ -14,6 +14,7 @@ interface DashboardMainProps {
   activeSub: Record<string, unknown> | null;
   serverConnected: boolean;
   hasUploadedLogs: boolean;
+  latestLogId?: string;
 }
 
 const SEVERITY_CONFIG = {
@@ -25,6 +26,7 @@ const SEVERITY_CONFIG = {
 };
 
 import Link from "next/link";
+import DashboardMetrics from "./DashboardMetrics";
 
 const CONNECTION_STEPS = [
   {
@@ -300,6 +302,7 @@ export default function DashboardMain({
   activeSub,
   serverConnected,
   hasUploadedLogs,
+  latestLogId,
 }: DashboardMainProps) {
   const [downloading, setDownloading] = useState(false);
 
@@ -313,16 +316,18 @@ export default function DashboardMain({
   const criticalAlerts = alerts.filter((a) => a.severity === "critical" && a.status === "open").length;
   const openAlerts = alerts.filter((a) => a.status === "open").length;
 
+  const [downloadFormat, setDownloadFormat] = useState<"pdf" | "docx" | "html">("pdf");
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const res = await fetch("/api/download-report");
+      const res = await fetch(`/api/download-report?format=${downloadFormat}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `prohori-report-${new Date().toISOString().split("T")[0]}.pdf`;
+        const ext = downloadFormat === "docx" ? "docx" : downloadFormat === "pdf" ? "pdf" : "html";
+        a.download = `prohori-report-${new Date().toISOString().split("T")[0]}.${ext}`;
         a.click();
       }
     } finally {
@@ -344,14 +349,25 @@ export default function DashboardMain({
           <button className="btn-secondary flex-1 sm:flex-none justify-center py-2 px-4 text-sm flex items-center gap-2">
             <RefreshCw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Refresh</span>
           </button>
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="btn-primary flex-1 sm:flex-none justify-center py-2 px-4 text-sm flex items-center gap-2 disabled:opacity-50"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>{downloading ? "Generating..." : "Download Report"}</span>
-          </button>
+          <div className="flex items-center border border-white/10 rounded-lg bg-white/5">
+            <select
+              value={downloadFormat}
+              onChange={(e) => setDownloadFormat(e.target.value as "pdf" | "docx" | "html")}
+              className="bg-transparent text-white text-xs pl-2 outline-none border-none cursor-pointer py-2 opacity-80 hover:opacity-100"
+            >
+              <option value="pdf" className="bg-navy-900">PDF</option>
+              <option value="docx" className="bg-navy-900">DOCX</option>
+              <option value="html" className="bg-navy-900">HTML</option>
+            </select>
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="btn-primary rounded-l-none border-l border-white/10 flex-1 sm:flex-none justify-center py-2 px-4 text-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{downloading ? "Generating..." : "Download"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -398,6 +414,16 @@ export default function DashboardMain({
             </div>
           )}
         </div>
+      )}
+
+
+      {/* AI Enhanced Metrics View */}
+      {(serverConnected || hasUploadedLogs) && (
+        <DashboardMetrics
+          companyId={company?.id as string}
+          source={hasUploadedLogs ? "log" : "wazuh"}
+          logId={hasUploadedLogs ? latestLogId : undefined}
+        />
       )}
 
       {/* Stat cards */}
