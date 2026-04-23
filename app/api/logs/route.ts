@@ -7,15 +7,9 @@ export const dynamic = 'force-dynamic';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: "No id provided" }, { status: 400 });
-    }
-
     const supabaseServer = createServerClient();
     const { data: { user } } = await supabaseServer.auth.getUser();
 
@@ -34,22 +28,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
-    const { data: log, error } = await supabaseAdmin
+    const { data: logs, error } = await supabaseAdmin
       .from('company_uploaded_logs')
       .select('*')
-      .eq('id', id)
       .eq('company_id', company.id)
-      .single();
+      .order('created_at', { ascending: false });
 
-    if (error || !log) {
-      return NextResponse.json({ error: "Log not found" }, { status: 404 });
+    if (error) {
+      console.error("DB select error:", error);
+      return NextResponse.json({ error: "Failed to fetch logs" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, log });
+    return NextResponse.json({ success: true, logs: logs || [] });
   } catch (error) {
-    console.error("Get log error:", error);
+    console.error("List logs error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch log" },
+      { error: "Failed to fetch logs" },
       { status: 500 }
     );
   }

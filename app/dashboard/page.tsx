@@ -39,6 +39,14 @@ export default async function DashboardPage() {
     .eq("company_id", company?.id || "")
     .maybeSingle();
 
+  // Fetch uploaded logs count
+  const { count: logsCount } = await supabase
+    .from("company_uploaded_logs")
+    .select("*", { count: 'exact', head: true })
+    .eq("company_id", company?.id || "");
+
+  const hasUploadedLogs = logsCount ? logsCount > 0 : false;
+
   return (
     <DashboardMain
       company={company}
@@ -46,6 +54,7 @@ export default async function DashboardPage() {
       metrics={metrics || []}
       activeSub={activeSub}
       serverConnected={(company?.server_connected as boolean) || false}
+      hasUploadedLogs={hasUploadedLogs}
     />
   );
 }

@@ -115,9 +115,9 @@ async function handlePost(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Question required" }, { status: 400 });
     }
     
-    const apiKey = process.env.AGENTROUTER_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "AgentRouter API Key not configured" }, { status: 500 });
+      return NextResponse.json({ error: "OpenRouter API Key not configured" }, { status: 500 });
     }
     
     const serverInfo = serverData ? `
@@ -152,22 +152,30 @@ Reference Bangladesh's Cyber Security Act 2023 when relevant for security threat
       { role: "user", content: question },
     ];
     
-    const res = await fetch("https://agentrouter.org/v1/chat/completions", {
+    // Default to primary recommendation if not matched
+    let targetModel = "qwen/qwen3-235b-a22b";
+    if (model === "deepseek/deepseek-r1-0528" || model === "qwen/qwen3-30b-a3b:free" || model === "qwen/qwen3-235b-a22b") {
+      targetModel = model;
+    }
+
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://prohori.app",
+        "X-Title": "Prohori",
       },
       body: JSON.stringify({
-        model: model,
+        model: targetModel,
         messages: messages,
       })
     });
 
     if (!res.ok) {
       const errorData = await res.text();
-      console.error("AgentRouter Error:", errorData);
-      throw new Error(`AgentRouter API error: ${res.status}`);
+      console.error("OpenRouter Error:", errorData);
+      throw new Error(`OpenRouter API error: ${res.status}`);
     }
 
     const data = await res.json();
@@ -180,7 +188,7 @@ Reference Bangladesh's Cyber Security Act 2023 when relevant for security threat
         totalTokens: data.usage?.total_tokens,
       },
       model: data.model,
-      provider: "AgentRouter"
+      provider: "OpenRouter"
     }, { headers: rateLimitHeaders(rateCheck) });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "AI error";
