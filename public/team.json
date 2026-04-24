@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "name": "Jane Doe",
+    "role": "Team Lead & Full Stack Developer",
+    "studentId": "191000001",
+    "department": "Computer Science and Engineering",
+    "university": "Green University of Bangladesh",
+    "photo": "https://i.pravatar.cc/300?img=47",
+    "links": {
+      "linkedin": "https://linkedin.com/in/janedoe",
+      "github": "https://github.com/janedoe",
+      "facebook": "https://facebook.com/janedoe"
+    }
+  },
+  {
+    "id": 2,
+    "name": "John Smith",
+    "role": "Frontend Developer",
+    "studentId": "191000002",
+    "department": "Computer Science and Engineering",
+    "university": "Green University of Bangladesh",
+    "photo": "https://i.pravatar.cc/300?img=11",
+    "links": {
+      "linkedin": "https://linkedin.com/in/johnsmith",
+      "github": "https://github.com/johnsmith",
+      "facebook": "https://facebook.com/johnsmith"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Alice Johnson",
+    "role": "Backend & Security Engineer",
+    "studentId": "191000003",
+    "department": "Computer Science and Engineering",
+    "university": "Green University of Bangladesh",
+    "photo": "https://i.pravatar.cc/300?img=5",
+    "links": {
+      "linkedin": "https://linkedin.com/in/alicejohnson",
+      "github": "https://github.com/alicejohnson",
+      "facebook": "https://facebook.com/alicejohnson"
+    }
+  }
+]
