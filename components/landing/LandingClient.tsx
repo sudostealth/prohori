@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useTransform, type Variants } from "framer-motion";
 import { 
   Shield, Activity, Brain, CheckCircle,
-  ArrowRight, Zap, Lock, Globe, ChevronRight, Star, Menu, X
+  ArrowRight, Zap, Lock, Globe, ChevronRight, Menu, X
 } from "lucide-react";
 import type { SubscriptionPlan, PlatformContent } from "@/types";
 import { buttonVariants } from "@/components/ui/button";
@@ -197,11 +197,18 @@ export default function LandingClient({ announcements }: LandingClientProps) {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-            {["Features", "Docs", "Blog"].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-cyan-400 transition-colors relative group">
-                {item}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </a>
+            {["Features", "Docs"].map((item) => (
+              item === "Docs" ? (
+                <Link key={item} href="/docs" className="hover:text-cyan-400 transition-colors relative group">
+                  {item}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
+                </Link>
+              ) : (
+                <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-cyan-400 transition-colors relative group">
+                  {item}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full rounded-full"></span>
+                </a>
+              )
             ))}
           </div>
 
@@ -228,9 +235,15 @@ export default function LandingClient({ announcements }: LandingClientProps) {
               className="md:hidden overflow-hidden glass-card mx-4 mb-4 p-4 space-y-3"
             >
               {["Features", "Docs"].map((item) => (
-                <a key={item} href={`#${item.toLowerCase()}`} className="block text-gray-300 hover:text-cyan-400 hover:bg-white/5 px-3 py-2 rounded-md transition-colors font-medium" onClick={() => setNavOpen(false)}>
-                  {item}
-                </a>
+                item === "Docs" ? (
+                  <Link key={item} href="/docs" className="block text-gray-300 hover:text-cyan-400 hover:bg-white/5 px-3 py-2 rounded-md transition-colors font-medium" onClick={() => setNavOpen(false)}>
+                    {item}
+                  </Link>
+                ) : (
+                  <a key={item} href={`#${item.toLowerCase()}`} className="block text-gray-300 hover:text-cyan-400 hover:bg-white/5 px-3 py-2 rounded-md transition-colors font-medium" onClick={() => setNavOpen(false)}>
+                    {item}
+                  </a>
+                )
               ))}
               <div className="pt-2 border-t border-white/5 flex flex-col gap-2">
                 <Link href="/auth/login" className={buttonVariants({ variant: "ghost", className: "w-full justify-start text-gray-300" })}>
@@ -412,10 +425,13 @@ export default function LandingClient({ announcements }: LandingClientProps) {
             <span className="font-bold text-xl text-white tracking-wide">প্রহরী</span>
             <span className="text-gray-500 text-sm font-medium border-l border-white/10 pl-3 ml-3">Digital Resilience Suite</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-white/5 rounded-full px-4 py-1.5 border border-white/5">
-            {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />)}
-            <span className="text-gray-400 text-sm font-medium ml-2 tracking-wide">Trusted by 500+ businesses</span>
-          </div>
+          <Link
+            href="/project-details"
+            target="_blank"
+            className="flex items-center gap-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 transition-colors rounded-full px-4 py-1.5 border border-cyan-500/20 hover:border-cyan-500/40 cursor-pointer"
+          >
+            <span className="text-sm font-medium tracking-wide">Project Details</span>
+          </Link>
           <p className="text-gray-500 text-sm font-medium">
             © {new Date().getFullYear()} Prohori. All rights reserved.
           </p>
