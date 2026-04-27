@@ -318,9 +318,24 @@ export default function EndpointsPage() {
               <div className="p-6 sm:p-8 overflow-y-auto">
                 {!deployScript ? (
                   <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-6">
+                      <div className="flex items-center gap-2 text-blue-400 font-semibold mb-2">
+                        <AlertCircle className="w-5 h-5" />
+                        Important Prerequisites
+                      </div>
+                      <ul className="text-sm text-blue-300/80 space-y-1.5 list-disc list-inside">
+                        <li>Ensure your Wazuh Server connection is active in the Settings page.</li>
+                        <li>Verify that your Wazuh API username and password are correct.</li>
+                        <li>Make sure the Wazuh server is accessible and port 55000 is open (e.g., check firewall rules in your cloud provider like Google VM).</li>
+                      </ul>
+                    </div>
+
                     <div>
-                      <Label className="text-gray-300">Server Name</Label>
+                      <Label htmlFor="agentName" className="text-gray-300">Server Name</Label>
                       <Input 
+                        id="agentName"
+                        name="agentName"
+                        autoComplete="off"
                         value={agentName}
                         onChange={(e) => setAgentName(e.target.value)}
                         placeholder="e.g., web-server-01, db-prod"
