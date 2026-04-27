@@ -1,4 +1,3 @@
-import fetch, { RequestInit as NodeFetchRequestInit } from "node-fetch";
 import https from "https";
 
 interface WazuhCredentials {
@@ -63,20 +62,6 @@ export class WazuhClient {
     this.credentials = credentials;
   }
 
-  private getFetchOptions(options: NodeFetchRequestInit = {}): NodeFetchRequestInit {
-    // Wazuh typically uses self-signed certificates.
-    // By creating an https.Agent with rejectUnauthorized: false,
-    // we instruct node-fetch to ignore SSL certificate validation errors.
-    const agent = new https.Agent({
-      rejectUnauthorized: false
-    });
-
-    return {
-      ...options,
-      agent,
-    };
-  }
-
   private async authenticate(): Promise<string> {
     if (this.token && Date.now() < this.tokenExpiry) {
       return this.token;
@@ -89,13 +74,20 @@ export class WazuhClient {
     const authHeader = 'Basic ' + Buffer.from(`${this.credentials.api_username}:${this.credentials.api_password}`).toString('base64');
 
     try {
-      const response = await fetch(url, this.getFetchOptions({
+      // In Next.js App Router, using custom agent with global fetch throws errors or ignores it.
+      // node-fetch has issues when conflicting with global fetch.
+      // Since Next.js overrides global fetch, we import `node-fetch` directly as `nodeFetch`.
+      const nodeFetch = (await import('node-fetch')).default;
+      const agent = new https.Agent({ rejectUnauthorized: false });
+
+      const response = await nodeFetch(url, {
         method: 'POST',
+        agent,
         headers: {
           'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
-      }));
+      });
 
       if (!response.ok) {
         let errorMsg = response.statusText;
@@ -131,7 +123,7 @@ export class WazuhClient {
     }
   }
 
-  private async request<T = unknown>(endpoint: string, options: NodeFetchRequestInit = {}): Promise<T> {
+  private async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = await this.authenticate();
     
     // Convert body to string if it's an object, as node-fetch requires a string body
@@ -140,17 +132,19 @@ export class WazuhClient {
         finalBody = JSON.stringify(finalBody);
     }
 
-    const fetchOptions = this.getFetchOptions({
+    const nodeFetch = (await import('node-fetch')).default;
+    const agent = new https.Agent({ rejectUnauthorized: false });
+
+    const response = await nodeFetch(`${this.credentials.api_url}${endpoint}`, {
       ...options,
-      body: finalBody,
+      body: finalBody as string | undefined,
+      agent,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
         ...(options.headers || {}),
       },
     });
-
-    const response = await fetch(`${this.credentials.api_url}${endpoint}`, fetchOptions);
 
     if (!response.ok) {
       let errorDetail = response.statusText;
