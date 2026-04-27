@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Activity, AlertTriangle, Server, Download, RefreshCw,
   Cpu, CheckCircle2, XCircle, AlertCircle,
-  Check, Terminal, ChevronDown, ChevronUp
+  Check, Terminal, ChevronDown, ChevronUp, Plus, Shield
 } from "lucide-react";
 import type { SecurityAlert, ServerMetric } from "@/types";
 
@@ -305,8 +305,19 @@ export default function DashboardMain({
   latestLogId,
 }: DashboardMainProps) {
   const [downloading, setDownloading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [wazuhData, setWazuhData] = useState<any>(null);
 
-  const agentsDeployed = metrics.length > 0;
+  useEffect(() => {
+    if (serverConnected) {
+      fetch("/api/wazuh/data")
+        .then(res => res.json())
+        .then(data => setWazuhData(data))
+        .catch(console.error);
+    }
+  }, [serverConnected]);
+
+  const agentsDeployed = wazuhData?.stats?.total > 0 || metrics.length > 0;
 
   const avgCpu = metrics.length ? metrics.reduce((s, m) => s + m.cpu_percent, 0) / metrics.length : 0;
   const avgMem = metrics.length ? metrics.reduce((s, m) => s + m.memory_percent, 0) / metrics.length : 0;
@@ -371,49 +382,80 @@ export default function DashboardMain({
         </div>
       </div>
 
-      {/* Show full onboarding if not connected or no agents are deployed AND no logs are uploaded */}
-      {(!serverConnected || !agentsDeployed) && !hasUploadedLogs ? (
-        <OnboardingPanel serverConnected={serverConnected} agentsDeployed={agentsDeployed} />
-      ) : (
-        <div className="flex flex-col gap-4">
-          {serverConnected && agentsDeployed && (
-            <div className="glass-card p-4 border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">Wazuh Server Connected</p>
-                  <p className="text-xs text-green-400">Monitoring {metrics.length} agents actively</p>
-                </div>
+      {/* Top Status Badges */}
+      <div className="flex flex-col gap-4">
+        <div className={`glass-card p-4 border ${serverConnected ? 'border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-purple-500/5' : 'border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent'} flex items-center justify-between`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${serverConnected ? 'bg-green-500/20 border-green-500/30' : 'bg-red-500/20 border-red-500/30'}`}>
+              {serverConnected ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <XCircle className="w-5 h-5 text-red-400" />}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white flex items-center gap-2">
+                Wazuh Server Connection
+                <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide ${serverConnected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {serverConnected ? 'Connected' : 'Not Connected'}
+                </span>
+              </p>
+              <p className={`text-xs ${serverConnected ? 'text-green-400' : 'text-red-400'}`}>
+                {serverConnected ? `Monitoring ${wazuhData?.stats?.total || 0} agents actively` : 'Please configure your Wazuh server'}
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/settings/wazuh" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
+            <Server className="w-3.5 h-3.5" /> Configure
+          </Link>
+        </div>
+
+        {serverConnected && (
+          <div className={`glass-card p-4 border ${agentsDeployed ? 'border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-cyan-500/5' : 'border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-transparent'} flex items-center justify-between`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${agentsDeployed ? 'bg-blue-500/20 border-blue-500/30' : 'bg-yellow-500/20 border-yellow-500/30'}`}>
+                {agentsDeployed ? <Activity className="w-5 h-5 text-blue-400" /> : <AlertTriangle className="w-5 h-5 text-yellow-400" />}
               </div>
-              <Link href="/dashboard/settings/wazuh" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
-                <Server className="w-3.5 h-3.5" /> Configure
+              <div>
+                <p className="text-sm font-bold text-white flex items-center gap-2">
+                  Agent Deployment
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide ${agentsDeployed ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                    {agentsDeployed ? 'Deployed' : 'Not Deployed'}
+                  </span>
+                </p>
+                <p className={`text-xs ${agentsDeployed ? 'text-blue-400' : 'text-yellow-400'}`}>
+                  {agentsDeployed ? `${wazuhData?.stats?.active || 0} active agents` : 'Deploy an agent to start monitoring'}
+                </p>
+              </div>
+            </div>
+            <Link href="/dashboard/endpoints" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
+              <Plus className="w-3.5 h-3.5" /> Deploy
+            </Link>
+          </div>
+        )}
+
+        {hasUploadedLogs && (
+          <div className="glass-card p-4 border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-pink-500/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                <Download className="w-5 h-5 text-purple-400 rotate-180" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Log File Uploaded</p>
+                <p className="text-xs text-purple-400">Ready for AI Analysis</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard/ai-analyst" className="btn-primary py-1.5 px-3 text-xs flex items-center gap-2">
+                Analyze Log
+              </Link>
+              <Link href="/dashboard/settings/logs" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
+                Manage
               </Link>
             </div>
-          )}
-          {hasUploadedLogs && (
-            <div className="glass-card p-4 border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-pink-500/5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                  <Download className="w-5 h-5 text-purple-400 rotate-180" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">Log File Uploaded</p>
-                  <p className="text-xs text-purple-400">Ready for AI Analysis</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link href="/dashboard/ai-analyst" className="btn-primary py-1.5 px-3 text-xs flex items-center gap-2">
-                  Analyze Log
-                </Link>
-                <Link href="/dashboard/settings/logs" className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-2">
-                  Manage
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+
+      {/* Show full onboarding if not connected OR if they haven't started uploading logs yet */}
+      {!serverConnected && !hasUploadedLogs && (
+        <OnboardingPanel serverConnected={serverConnected} agentsDeployed={agentsDeployed} />
       )}
 
 
@@ -450,7 +492,7 @@ export default function DashboardMain({
           <h2 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
             <Cpu className="w-4 h-4 text-cyan-400" /> Server Health
           </h2>
-          {serverConnected && metrics.length > 0 ? (
+          {serverConnected && agentsDeployed ? (
             <div className="flex items-center justify-around">
               <GaugeCircle value={Math.round(avgCpu)} label="CPU" color="#00d4ff" />
               <GaugeCircle value={Math.round(avgMem)} label="Memory" color="#7c3aed" />
@@ -458,6 +500,9 @@ export default function DashboardMain({
             </div>
           ) : (
             <div className="flex items-center justify-around opacity-30">
+              <div className="absolute inset-0 flex items-center justify-center z-10 font-bold text-gray-300">
+                Agent not deployed
+              </div>
               <GaugeCircle value={0} label="CPU" color="#00d4ff" />
               <GaugeCircle value={0} label="Memory" color="#7c3aed" />
               <GaugeCircle value={0} label="Disk" color="#10b981" />
@@ -466,12 +511,12 @@ export default function DashboardMain({
         </div>
 
         {/* Server Status */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-6 relative overflow-hidden">
           <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
             <Server className="w-4 h-4 text-green-400" /> Server Status
           </h2>
           <div className="space-y-3">
-            {serverConnected && metrics.length > 0 ? (
+            {serverConnected && agentsDeployed ? (
               metrics.slice(0, 5).map((m) => (
                 <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-white/2 border border-white/5">
                   <div className="flex items-center gap-2">
@@ -484,22 +529,23 @@ export default function DashboardMain({
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-600">
+              <div className="text-center py-8 text-gray-600 relative">
                 <Server className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No servers connected</p>
+                <p className="text-sm font-bold text-gray-400">Agent not deployed</p>
+                <p className="text-xs text-gray-600 mt-1">Deploy an agent to see server statuses</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Recent Alerts Feed */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-6 relative overflow-hidden">
           <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
             <Activity className="w-4 h-4 text-orange-400" /> Threat Feed
           </h2>
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {serverConnected && alerts.length > 0 ? (
-              alerts.slice(0, 8).map((alert) => {
+            {serverConnected && agentsDeployed ? (
+              alerts.length > 0 ? alerts.slice(0, 8).map((alert) => {
                 const config = SEVERITY_CONFIG[alert.severity] || SEVERITY_CONFIG.info;
                 return (
                   <div key={alert.id} className={`flex items-start gap-2 p-2.5 rounded-lg border text-xs ${config.bg}`}>
@@ -514,11 +560,17 @@ export default function DashboardMain({
                     </div>
                   </div>
                 );
-              })
+              }) : (
+                <div className="text-center py-8 text-gray-600">
+                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30 text-green-500" />
+                  <p className="text-sm">No recent threats</p>
+                </div>
+              )
             ) : (
               <div className="text-center py-8 text-gray-600">
-                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-30 text-green-500" />
-                <p className="text-sm">{serverConnected ? "No recent threats" : "Connect server to see alerts"}</p>
+                <Shield className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm font-bold text-gray-400">Agent not deployed</p>
+                <p className="text-xs text-gray-600 mt-1">Deploy an agent to start receiving alerts</p>
               </div>
             )}
           </div>
